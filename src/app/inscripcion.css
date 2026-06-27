@@ -1,0 +1,104 @@
+:host {
+    --azul-gaiterito: #0d6efd;
+    --verde-gaiterito: #198754;
+    --gris-fondo: #f8f9fa;
+    --gris-borde: #dee2e6;
+    --rojo-alerta: #dc3545;
+}
+
+.contenedor-gaiterito {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.tarjeta-wizard {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 850px;
+    border: 1px solid var(--gris-borde);
+}
+
+.encabezado-wizard {
+    background: var(--gris-fondo);
+    padding: 20px;
+    border-bottom: 1px solid var(--gris-borde);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    text-align: center;
+}
+
+.encabezado-wizard h2 { margin: 0; color: #333; font-size: 24px; }
+.encabezado-wizard p { margin: 5px 0 0 0; color: #666; }
+
+
+.progreso-wizard {
+    display: flex;
+    justify-content: space-around;
+    padding: 20px 10px;
+    background: #fff;
+    border-bottom: 1px solid var(--gris-borde);
+}
+
+.paso-progreso { text-align: center; opacity: 0.4; flex: 1; }
+.paso-progreso.activo { opacity: 1; font-weight: bold; color: var(--azul-gaiterito); }
+.paso-progreso.completo { opacity: 1; color: var(--verde-gaiterito); }
+
+.icono-paso {
+    display: block;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    border-radius: 50%;
+    background: #6c757d;
+    color: white;
+    margin: 0 auto 5px auto;
+}
+
+.paso-progreso.activo .icono-paso { background: var(--azul-gaiterito); }
+.paso-progreso.completo .icono-paso { background: var(--verde-gaiterito); }
+
+
+.pestana-wizard { display: none; padding: 25px; }
+.pestana-wizard.activa { display: block; }
+.pestana-wizard h3 { margin-top: 0; color: #444; font-size: 20px; margin-bottom: 20px;}
+
+.descripcion-seccion { color: #666; font-size: 14px; margin-bottom: 15px; }
+
+
+.rejilla-formulario { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+.espacio-arriba { margin-top: 15px; }
+
+.campo-formulario { display: flex; flex-direction: column; margin-bottom: 15px; }
+.campo-formulario label { font-weight: 600; margin-bottom: 5px; color: #555; font-size: 14px; }
+.campo-formulario input, .campo-formulario textarea, .campo-formulario select { padding: 10px; border: 1px solid var(--gris-borde); border-radius: 4px; font-size: 15px; }
+
+.fila-lineal { background: var(--gris-fondo); padding: 15px; border-radius: 6px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+.grupo-radio label { margin-left: 15px; font-weight: bold; cursor: pointer; }
+
+
+.caja-checklist { background: #fff; border: 1px solid var(--gris-borde); border-radius: 6px; padding: 15px; }
+.item-check { display: flex; align-items: center; margin-bottom: 12px; cursor: pointer; }
+.item-check input { margin-right: 10px; width: 18px; height: 18px; }
+.etiqueta-alerta { color: var(--rojo-alerta); font-weight: bold; }
+
+/* Tarjeta de Cálculo de Edad */
+.tarjeta-informativa { background: #e7f1ff; border: 1px solid #b6d4fe; padding: 15px; border-radius: 6px; text-align: center; margin-bottom: 20px; }
+.tarjeta-informativa p { margin: 5px 0; font-size: 16px; }
+
+.alerta-alternativa { background: #212529; color: white; padding: 12px; border-radius: 6px; margin-top: 20px; }
+.alerta-alternativa label { display: flex; align-items: center; cursor: pointer;}
+.alerta-alternativa input { margin-right: 10px; }
+
+.acciones-finales { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.item-accion { border: 1px dashed var(--gris-borde); padding: 15px; border-radius: 6px; background: var(--gris-fondo); }
+
+/* Área de Botones */
+.botones-wizard { padding: 20px; border-top: 1px solid var(--gris-borde); background: var(--gris-fondo); display: flex; justify-content: space-between; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
+.btn-azul { background: var(--azul-gaiterito); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.btn-gris { background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+.btn-verde { background: var(--verde-gaiterito); color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.btn-imprimir { background: #ffc107; color: #000; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }

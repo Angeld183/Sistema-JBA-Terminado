@@ -1,0 +1,6 @@
+@ApiJBA_HostAddress = http://localhost:5188
+
+GET {{ApiJBA_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

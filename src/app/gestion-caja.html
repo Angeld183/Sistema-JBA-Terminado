@@ -1,0 +1,75 @@
+<div class="contenedor-gaiterito">
+    <div class="tarjeta-wizard">
+        <h2>💰 Gestión de Fondos</h2>
+        
+        <div class="balance-caja">
+            <h3>Balance Actual: <span>{{ balance | currency:'USD':'symbol':'1.2-2' }}</span></h3>
+        </div>
+
+        <form (ngSubmit)="$event.preventDefault()">
+            <div class="rejilla-formulario">
+                <select [(ngModel)]="tipoTransaccion" name="tipoTransaccion" required>
+                    <option value="ingreso">🟢 Ingreso</option>
+                    <option value="egreso">🔴 Retiro</option>
+                </select>
+                
+                <input 
+                    type="number" 
+                    [(ngModel)]="montoInput" 
+                    name="montoInput" 
+                    placeholder="Monto $" 
+                    step="0.01" 
+                    required>
+                
+                <input 
+                    type="date" 
+                    [(ngModel)]="fechaInput" 
+                    name="fechaInput" 
+                    required>
+            </div>
+            
+            <textarea 
+                [(ngModel)]="descripcionInput" 
+                name="descripcionInput" 
+                placeholder="Motivo o razón del movimiento..." 
+                required></textarea>
+            
+            <button type="button" (click)="registrarMovimiento()" class="btn-verde">
+                <i class="fas fa-save"></i> Registrar Movimiento
+            </button>
+            <button type="button" (click)="exportarCajaExcel()" class="btn-azul">
+                <i class="fas fa-file-excel"></i> Exportar a Excel
+            </button>
+        </form>
+
+        <table id="tabla-historial">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Descripción</th>
+                    <th>Monto</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let mov of historial.slice().reverse()">
+                    <td>{{ mov.fecha }}</td>
+                    <td>
+                        <span [style.color]="mov.tipo === 'ingreso' ? '#27ae60' : '#c0392b'" style="font-weight: bold;">
+                            {{ mov.tipo === 'ingreso' ? 'INGRESO' : 'RETIRO' }}
+                        </span>
+                    </td>
+                    <td>{{ mov.desc }}</td>
+                    <td [style.color]="mov.tipo === 'ingreso' ? '#27ae60' : '#c0392b'" style="font-weight: bold;">
+                        {{ mov.tipo === 'ingreso' ? '+' : '-' }} {{ mov.monto | currency:'USD':'symbol':'1.2-2' }}
+                    </td>
+                </tr>
+                <tr *ngIf="historial.length === 0">
+                    <td colspan="4" style="text-align: center; color: #7f8c8d; padding: 20px;">
+                        No se registran movimientos en la caja chica.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

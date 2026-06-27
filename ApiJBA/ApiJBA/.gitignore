@@ -1,0 +1,23 @@
+# Build folders
+bin/
+obj/
+
+# Visual Studio / VS Code / JetBrains Rider
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln.docstates
+*.userosscache
+
+# SQL Server and local database files
+*.mdf
+*.ldf
+*.db
+*.sqlite
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini

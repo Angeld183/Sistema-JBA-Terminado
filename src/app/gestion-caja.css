@@ -1,0 +1,99 @@
+.contenedor-gaiterito {
+    max-width: 850px;
+    margin: 20px auto;
+    padding: 20px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+.tarjeta-wizard {
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.balance-caja {
+    background: #f8f9fa;
+    padding: 20px;
+    text-align: center;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    border: 1px solid #e9ecef;
+}
+.balance-caja h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 22px;
+}
+.balance-caja span {
+    color: #27ae60;
+    font-weight: 800;
+}
+.rejilla-formulario {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+.tarjeta-wizard input, 
+.tarjeta-wizard select, 
+.tarjeta-wizard textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+.tarjeta-wizard textarea {
+    height: 90px;
+    resize: none;
+    margin-bottom: 10px;
+}
+.btn-verde {
+    background-color: #27ae60;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    font-weight: bold;
+    margin-top: 10px;
+    font-size: 15px;
+    transition: background 0.2s ease;
+}
+.btn-verde:hover {
+    background-color: #219150;
+}
+.btn-azul {
+    background-color: #3498db;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    font-weight: bold;
+    margin-top: 10px;
+    font-size: 15px;
+    transition: background 0.2s ease;
+}
+.btn-azul:hover {
+    background-color: #2980b9;
+}
+#tabla-historial {
+    width: 100%;
+    margin-top: 30px;
+    border-collapse: collapse;
+}
+#tabla-historial th, 
+#tabla-historial td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    font-size: 14px;
+}
+#tabla-historial th {
+    background-color: #f2f2f2;
+    color: #34495e;
+    font-weight: 700;
+}

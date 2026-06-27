@@ -1,0 +1,242 @@
+<div class="contenedor-gaiterito">
+    <div class="tarjeta-wizard">
+        
+        <div class="encabezado-wizard">
+            <h2>📋 Registro de Inscripción Escolar</h2>
+            <p>Preescolar Juan Bautista Arismendi</p>
+        </div>
+        
+        <div class="progreso-wizard">
+            <div class="paso-progreso" [class.activo]="pestanaActual === 1">
+                <span class="icono-paso">1</span>
+                <span class="nombre-paso">Datos Básicos</span>
+            </div>
+            <div class="paso-progreso" [class.activo]="pestanaActual === 2">
+                <span class="icono-paso">2</span>
+                <span class="nombre-paso">Requisitos</span>
+            </div>
+            <div class="paso-progreso" [class.activo]="pestanaActual === 3">
+                <span class="icono-paso">3</span>
+                <span class="nombre-paso">Asignación</span>
+            </div>
+            <div class="paso-progreso" [class.activo]="pestanaActual === 4">
+                <span class="icono-paso">4</span>
+                <span class="nombre-paso">Finalizar</span>
+            </div>
+        </div>
+
+        <form (ngSubmit)="guardarMatricula()" autocomplete="off">
+            
+            <div class="pestana-wizard" [class.activa]="pestanaActual === 1" *ngIf="pestanaActual === 1">
+                <h3><i class="fas fa-user"></i> 1. Tipo de Ingreso y Datos Básicos</h3>
+                
+                <div class="grupo-formulario fila-lineal">
+                    <label class="etiqueta-principal">¿El estudiante es alumno REGULAR?</label>
+                    <div class="grupo-radio">
+                        <label>
+                            <input type="radio" name="es_regular" value="si" [(ngModel)]="esRegular" (change)="alternarTipoIngreso()"> SÍ
+                        </label>
+                        <label>
+                            <input type="radio" name="es_regular" value="no" [(ngModel)]="esRegular" (change)="alternarTipoIngreso()"> NO (Ingreso Nuevo)
+                        </label>
+                    </div>
+                </div>
+
+                <div *ngIf="esRegular === 'si'" style="background: #f4f6f7; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #0d6efd;">
+                    <label style="font-weight: bold; color: #2c3e50; display: block; margin-bottom: 5px;">Buscar Alumno Registrado Anteriormente:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" name="txt_busqueda" [(ngModel)]="terminoBusqueda" placeholder="Escribe el nombre o cédula..." style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <button type="button" (click)="buscarAlumnoRegular()" style="background: #0d6efd; color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">Buscar 🔍</button>
+                    </div>
+                </div>
+
+                <h4 style="color: #0d6efd; border-bottom: 2px solid #dee2e6; padding-bottom: 5px; margin-top: 10px;">👤 Datos del Representante Legal Principal</h4>
+                <div class="rejilla-formulario">
+                    <div class="campo-formulario">
+                        <label>Cédula del Representante *</label>
+                        <input type="text" name="rep_cedula" [(ngModel)]="alumno.cedula" (input)="calcularCedulaEscolar()" required placeholder="Ej. 15456789">
+                    </div>
+                    <div class="campo-formulario">
+                        <label>Nombre del Representante *</label>
+                        <input type="text" name="rep_nombre" [(ngModel)]="alumno.representante" required placeholder="Ej. María Gómez">
+                    </div>
+                    <div class="campo-formulario">
+                        <label>Teléfono del Representante *</label>
+                        <input type="text" name="rep_telefono" [(ngModel)]="alumno.repTelefono" required placeholder="Ej. 04141234567">
+                    </div>
+                </div>
+
+                <div *ngIf="representanteAutoRellenado" style="background: #d4edda; border: 1px solid #28a745; color: #155724; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; justify-content: space-between;">
+                    <span><strong>✅ Representante encontrado.</strong> Los datos de «{{ alumno.representante }}» fueron precargados desde la base de datos. Puede modificar cualquier campo si lo necesita.</span>
+                    <button type="button" (click)="representanteAutoRellenado = false" style="background: none; border: 1px solid #155724; color: #155724; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">Entendido ✓</button>
+                </div>
+
+                <h4 style="color: #0d6efd; border-bottom: 2px solid #dee2e6; padding-bottom: 5px; margin-top: 20px;">👶 Datos del Alumno</h4>
+                <div class="rejilla-formulario">
+                    <div class="campo-formulario">
+                        <label>Nombre Completo del Alumno *</label>
+                        <input type="text" name="alumno_nombre" [(ngModel)]="alumno.nombre" required placeholder="Ej. Virginia Sofia">
+                    </div>
+                    
+                    <div class="campo-formulario">
+                        <label>Fecha de Nacimiento *</label>
+                        <input type="date" name="fecha_nac" [(ngModel)]="alumno.fechaNac" (change)="calcularCedulaEscolar()" required>
+                    </div>
+
+                    <!-- Si es Nuevo Ingreso, mostramos el prefijo y el ID generado de forma separada -->
+                    <div class="campo-formulario" *ngIf="esRegular === 'no'">
+                        <label>Prefijo Cédula Escolar *</label>
+                        <input type="text" name="cedula_prefijo" [(ngModel)]="alumno.prefijoCedula" (input)="calcularCedulaEscolar()" placeholder="Ej. 1" required style="font-weight: bold; text-align: center;">
+                    </div>
+                    <div class="campo-formulario" *ngIf="esRegular === 'no'">
+                        <label>Cédula Escolar Generada</label>
+                        <input type="text" name="cedula_alumno" [(ngModel)]="alumno.cedulaAlumno" readonly style="background: #f8f9fa; color: #0d6efd; font-weight: bold;" placeholder="Se calculará solo">
+                    </div>
+
+                    <!-- Si es Regular (Re-inscripción), mostramos un solo campo inmutable con su ID ya registrado -->
+                    <div class="campo-formulario" *ngIf="esRegular === 'si'">
+                        <label>Cédula Escolar (Registrada)</label>
+                        <input type="text" name="cedula_alumno_regular" [(ngModel)]="alumno.cedulaAlumno" readonly style="background: #e9ecef; color: #495057; font-weight: bold; cursor: not-allowed;" placeholder="Cédula escolar registrada">
+                    </div>
+
+                    <div class="campo-formulario">
+                        <label>Sexo *</label>
+                        <select name="alumno_sexo" [(ngModel)]="alumno.sexo" required>
+                            <option value="" disabled selected>-- Seleccione --</option>
+                            <option value="Femenino">Femenino</option>
+                            <option value="Masculino">Masculino</option>
+                        </select>
+                    </div>
+
+                    <div class="campo-formulario">
+                        <label>{{ esRegular === 'si' ? 'Nuevo Período Escolar *' : 'Año de Entrada al Plantel *' }}</label>
+                        <input type="number" name="ano_entrada" [(ngModel)]="alumno.anoEntrada" required [readonly]="esRegular === 'si'" [style.background]="esRegular === 'si' ? '#e2e8f0' : 'white'" [style.cursor]="esRegular === 'si' ? 'not-allowed' : 'auto'">
+                    </div>
+
+                    <div class="campo-formulario">
+                        <label>Motivo / Observación de Registro</label>
+                        <input type="text" name="motivo_obs" [(ngModel)]="alumno.motivo" placeholder="Ej. Nuevo ingreso regular">
+                    </div>
+                </div>
+
+                <h4 style="color: #0d6efd; border-bottom: 2px solid #dee2e6; padding-bottom: 5px; margin-top: 20px;">👩 Datos de la Madre</h4>
+                <div class="rejilla-formulario">
+                    <div class="campo-formulario">
+                        <label>Cédula de la Madre</label>
+                        <input type="text" name="madre_ci" [(ngModel)]="alumno.ciMadre" (input)="buscarYAutofillarMadre()" placeholder="Ej. 18222333">
+                    </div>
+                    <div class="campo-formulario">
+                        <label>Nombre Completo de la Madre</label>
+                        <input type="text" name="madre_nombre" [(ngModel)]="alumno.nombreMadre" placeholder="Ej. Juana Pérez">
+                    </div>
+                    <div class="campo-formulario">
+                        <label>Teléfono de la Madre</label>
+                        <input type="text" name="madre_tel" [(ngModel)]="alumno.telMadre" placeholder="Ej. 04127654321">
+                    </div>
+                </div>
+
+                <h4 style="color: #0d6efd; border-bottom: 2px solid #dee2e6; padding-bottom: 5px; margin-top: 20px;">👨 Datos del Padre</h4>
+                <div class="rejilla-formulario">
+                    <div class="campo-formulario">
+                        <label>Cédula del Padre</label>
+                        <input type="text" name="padre_ci" [(ngModel)]="alumno.ciPadre" (input)="buscarYAutofillarPadre()" placeholder="Ej. 14555666">
+                    </div>
+                    <div class="campo-formulario">
+                        <label>Nombre Completo del Padre</label>
+                        <input type="text" name="padre_nombre" [(ngModel)]="alumno.nombrePadre" placeholder="Ej. Carlos Pérez">
+                    </div>
+                    <div class="campo-formulario">
+                        <label>Teléfono del Padre</label>
+                        <input type="text" name="padre_tel" [(ngModel)]="alumno.telPadre" placeholder="Ej. 04249876543">
+                    </div>
+                </div>
+
+                <div class="campo-formulario espacio-arriba">
+                    <label style="font-weight: bold; color: #dc3545;">❤️ CONDICIÓN CARDIOVASCULAR / HISTORIAL MÉDICO *</label>
+                    <textarea name="historial_med" [(ngModel)]="alumno.historialMedico" rows="2" required placeholder="Ej. Alumno sano. Especificar alergias, asma o condiciones crónicas..."></textarea>
+                </div>
+            </div>
+
+            <div class="pestana-wizard" [class.activa]="pestanaActual === 2" *ngIf="pestanaActual === 2">
+                <h3><i class="fas fa-folder-open"></i> 2. Requisitos Documentales</h3>
+                <p class="descripcion-seccion">Marque los documentos físicos entregados por el representante:</p>
+                <div class="caja-checklist">
+                    <label class="item-check">
+                        <input type="checkbox" name="req_partida" [(ngModel)]="requisitos.partida"> 
+                        <span class="texto-requisito">Partida de Nacimiento</span>
+                    </label>
+                    <label class="item-check">
+                        <input type="checkbox" name="req_fotos" [(ngModel)]="requisitos.fotos"> 
+                        <span class="texto-requisito">4 Fotos tipo carnet</span>
+                    </label>
+                    <label class="item-check">
+                        <input type="checkbox" name="req_cedula" [(ngModel)]="requisitos.cedulaRep"> 
+                        <span class="texto-requisito">Copia de Cédula del Representante</span>
+                    </label>
+                    <label class="item-check">
+                        <input type="checkbox" name="req_vacunas" [(ngModel)]="requisitos.vacunas"> 
+                        <span class="texto-requisito">Copia de Tarjeta de Vacunación</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="pestana-wizard" [class.activa]="pestanaActual === 3" *ngIf="pestanaActual === 3">
+                <h3><i class="fas fa-school"></i> 3. Matriculación y Asignación Automática</h3>
+                
+                <div class="tarjeta-informativa">
+                    <p><strong>Edad Calculada del Alumno:</strong> <span style="font-weight: bold; color: #0d6efd;">{{ alumno.edad || '--' }}</span> años</p>
+                </div>
+
+                <div class="rejilla-formulario">
+                    <div class="campo-formulario">
+                        <label>Sala Asignada por el Sistema</label>
+                        <select name="sala_num" [(ngModel)]="alumno.salaNumero" disabled style="background: #e2e8f0; font-weight: bold; color: #334155;">
+                            <option value="3">Sala de 3 Años</option>
+                            <option value="4">Sala de 4 Años</option>
+                            <option value="5">Sala de 5 Años</option>
+                        </select>
+                    </div>
+                    <div class="campo-formulario">
+                        <label>Seleccione Sección Disponible *</label>
+                        <select name="seccion_final" [(ngModel)]="alumno.seccion" (change)="actualizarTurnoVisual()" required>
+                            <option value="" disabled selected>-- Elija la sección --</option>
+                            <option *ngFor="let s of seccionesDisponibles" [value]="s.sec">Sección "{{s.sec}}"</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div *ngIf="turnoTexto" style="margin-top: 15px; padding: 12px; border-radius: 6px; font-weight: bold; background-color: #e3f2fd; color: #0d6efd;">
+                    {{ turnoTexto }}
+                </div>
+            </div>
+
+            <div class="pestana-wizard" [class.activa]="pestanaActual === 4" *ngIf="pestanaActual === 4">
+                <h3><i class="fas fa-check-circle"></i> 4. Formalización de Inscripción</h3>
+                <p>El proceso en el sistema está listo. Complete las tareas de secretaría finales:</p>
+
+                <div style="background: #f8fafc; border: 1px solid #dee2e6; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+                    <p style="margin: 0 0 10px 0; font-weight: bold; color: #334155;">1. Soporte Físico e Impresión:</p>
+                    <button type="button" (click)="descargarPDF()" style="background: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-file-pdf"></i> Descargar Planilla de Inscripción 📄
+                    </button>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <p style="margin: 0 0 10px 0; font-weight: bold; color: #334155;">2. Control Interno:</p>
+                    <label class="item-check" style="display: block; margin-bottom: 8px;">
+                        <input type="checkbox" required name="chk_secretaria"> Archivar expediente físico con la ficha médica en Secretaría
+                    </label>
+                    <label class="item-check" style="display: block;">
+                        <input type="checkbox" required name="chk_cache"> Confirmar que los datos cargados en el caché local son correctos
+                    </label>
+                </div>
+            </div>
+
+            <div class="botones-wizard">
+                <button type="button" (click)="cambiarPestana(-1)" class="btn-gris" *ngIf="pestanaActual > 1">← Atrás</button>
+                <button type="button" (click)="cambiarPestana(1)" class="btn-azul" *ngIf="pestanaActual < 4">Siguiente →</button>
+                <button type="submit" class="btn-verde" *ngIf="pestanaActual === 4">💾 Finalizar e Inscribir</button>
+            </div>
+        </form>
+    </div>
+</div>

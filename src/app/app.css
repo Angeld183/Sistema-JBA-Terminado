@@ -1,0 +1,140 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body, :host {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f6f8fc;
+    overflow: hidden;
+    position: relative;
+}
+
+:host::before,
+:host::after {
+    content: "";
+    position: absolute;
+    width: 450px;
+    height: 450px;
+    background: #dbe9ff;
+    border-radius: 50%;
+    z-index: 0;
+}
+
+:host::before {
+    top: -180px;
+    left: -120px;
+}
+
+:host::after {
+    bottom: -180px;
+    right: -120px;
+}
+
+
+.login-container {
+    position: relative;
+    z-index: 1;
+    width: 420px;
+    background: #fff;
+    border-radius: 20px;
+    padding: 35px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    text-align: center;
+}
+
+.logo {
+    width: 200px;
+}
+
+h1 {
+    color: #0a3c91;
+    font-size: 34px;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: #7b7b7b;
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.divider {
+    width: 100%;
+    height: 1px;
+    background: #ddd;
+    margin: 15px 0 25px;
+    position: relative;
+}
+
+.divider::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background: #3b82f6;
+    border-radius: 50%;
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.input-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 18px;
+    border: 1px solid #ddd;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.input-group i {
+    width: 60px;
+    height: 60px;
+    background: #eef4ff;
+    color: #3b82f6;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.input-group input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 0 15px;
+    font-size: 18px;
+    color: #555;
+}
+
+.toggle-password {
+    width: 60px;
+    cursor: pointer;
+    color: #666;
+    font-size: 20px;
+}
+
+.btn-login {
+    width: 100%;
+    height: 60px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(90deg, #3b82f6, #2d6cdf);
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-login:hover {
+    transform: scale(1.02);
+}

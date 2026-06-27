@@ -1,0 +1,280 @@
+<div class="inventario-container">
+    <!-- Barra de Alertas/Notificaciones -->
+    <div class="custom-alert animate-fade-in" *ngIf="alertaMensaje" [ngClass]="'alert-' + alertaTipo">
+        <span class="alert-icon">
+            <i class="fas" [ngClass]="{
+                'fa-check-circle': alertaTipo === 'success',
+                'fa-exclamation-triangle': alertaTipo === 'warning',
+                'fa-times-circle': alertaTipo === 'danger'
+            }"></i>
+        </span>
+        <span class="alert-text">{{ alertaMensaje }}</span>
+    </div>
+
+    <!-- CABECERA DEL MÓDULO -->
+    <div class="header-section">
+        <div class="title-area">
+            <h1>📦 Gestión de Inventario</h1>
+            <p class="subtitle">Administra los insumos, materiales y stock de las salas del preescolar.</p>
+        </div>
+        <div class="action-buttons">
+            <button (click)="abrirModalIngreso()" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Registrar Material
+            </button>
+            <button (click)="abrirModalTraslado()" class="btn btn-secondary">
+                <i class="fas fa-exchange-alt"></i> Trasladar Material
+            </button>
+            <button (click)="abrirModalCategorias()" class="btn btn-purple">
+                <i class="fas fa-tags"></i> Categorías
+            </button>
+            <button (click)="exportarInventarioExcel()" class="btn btn-excel">
+                <i class="fas fa-file-excel"></i> Reporte Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- VISTA 1: GRID DE SALAS (Si no hay sala seleccionada) -->
+    <div class="rooms-view animate-fade-in" *ngIf="!salaSeleccionada">
+        <div class="rooms-grid">
+            <div class="room-card" *ngFor="let dep of depositos" (click)="abrirDetalle(dep)">
+                <div class="room-card-header">
+                    <div class="room-sigla" [style.background-color]="dep.nombre_d === 'Depósito General' ? '#4f46e5' : '#10b981'">
+                        {{ getSiglaSala(dep.nombre_d) }}
+                    </div>
+                    <span class="room-badge">{{ getCantidadItemsSala(dep.id_deposito) }} materiales</span>
+                </div>
+                <div class="room-card-body">
+                    <h3>{{ dep.nombre_d }}</h3>
+                    <p class="room-info">Haga clic para ver el listado de insumos almacenados en esta ubicación.</p>
+                </div>
+                <div class="room-card-footer">
+                    <span>Ver Detalles <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA 2: DETALLES DE SALA SELECCIONADA -->
+    <div class="detail-view animate-fade-in" *ngIf="salaSeleccionada">
+        <div class="detail-header">
+            <button (click)="volver()" class="btn-back">
+                <i class="fas fa-chevron-left"></i> Volver al menú de salas
+            </button>
+            <h2>Ubicación: {{ salaSeleccionada.nombre_d }}</h2>
+        </div>
+
+        <div class="detail-controls">
+            <div class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar por código o descripción de producto..." class="search-input">
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción del Insumo</th>
+                        <th>Categoría</th>
+                        <th>Stock Mínimo</th>
+                        <th>Stock Actual</th>
+                        <th style="text-align: center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let stock of getStocksFiltradosPorBusqueda()" [class.row-warning]="stock.cantidad < stock.cantidad_min">
+                        <td class="code-cell"><code>{{ stock.producto?.codigo_corto }}</code></td>
+                        <td class="desc-cell">{{ stock.producto?.descripcion }}</td>
+                        <td>
+                            <span class="category-tag">
+                                {{ categorias.find(c => c.id_categoria === stock.producto?.id_categoria)?.nombre_categoria || 'General' }}
+                            </span>
+                        </td>
+                        <td>{{ stock.cantidad_min }}</td>
+                        <td>
+                            <div class="stock-display">
+                                <span class="stock-qty" [ngClass]="{
+                                    'stock-alert': stock.cantidad < stock.cantidad_min,
+                                    'stock-ok': stock.cantidad >= stock.cantidad_min
+                                }">
+                                    {{ stock.cantidad }}
+                                </span>
+                                <span class="stock-alert-badge" *ngIf="stock.cantidad < stock.cantidad_min">
+                                    ⚠️ Bajo Mínimo
+                                </span>
+                            </div>
+                        </td>
+                        <td class="actions-cell">
+                            <button (click)="abrirModalEdicion(stock)" class="btn-action btn-edit" title="Editar stock">
+                                <i class="fas fa-edit"></i> Ajustar
+                            </button>
+                            <button (click)="eliminarStock(stock)" class="btn-action btn-delete" title="Retirar del depósito">
+                                <i class="fas fa-trash-alt"></i> Retirar
+                            </button>
+                        </td>
+                    </tr>
+                    <tr *ngIf="getStocksFiltradosPorBusqueda().length === 0">
+                        <td colspan="6" class="empty-table-row">
+                            <i class="fas fa-box-open empty-icon"></i>
+                            <p>No se encontraron insumos registrados en esta sala.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL 1: REGISTRAR / INGRESAR MATERIAL -->
+    <div class="modal-overlay animate-fade-in" *ngIf="modalIngresoAbierto">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>📦 Registrar Material / Producto</h3>
+                <button (click)="cerrarModales()" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Código Corto *</label>
+                    <input type="text" [(ngModel)]="codigoIngreso" placeholder="Ej: LAP-01, JUG-25" class="form-control" style="text-transform: uppercase;">
+                    <small class="form-help">Si el código ya existe, se incrementará la cantidad en la sala seleccionada.</small>
+                </div>
+                <div class="form-group">
+                    <label>Nombre / Descripción del Insumo *</label>
+                    <input type="text" [(ngModel)]="nombreIngreso" placeholder="Ej: Lápices de Colores Mongol" class="form-control">
+                </div>
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label>Cantidad a Ingresar *</label>
+                        <input type="number" [(ngModel)]="cantidadIngreso" min="1" class="form-control">
+                    </div>
+                    <div class="form-group half">
+                        <label>Stock Mínimo Alerta *</label>
+                        <input type="number" [(ngModel)]="minimoIngreso" min="0" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Categoría del Producto *</label>
+                    <select [(ngModel)]="categoriaIngresoId" class="form-control">
+                        <option *ngFor="let cat of categorias" [value]="cat.id_categoria">
+                            {{ cat.nombre_categoria }}
+                        </option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Sala de Destino *</label>
+                    <select [(ngModel)]="depositoIngresoId" class="form-control">
+                        <option *ngFor="let dep of depositos" [value]="dep.id_deposito">
+                            {{ dep.nombre_d }}
+                        </option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button (click)="ingresarMaterial()" class="btn btn-primary w-full">Confirmar Registro</button>
+                <button (click)="cerrarModales()" class="btn btn-outline w-full">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: TRASLADAR MATERIAL -->
+    <div class="modal-overlay animate-fade-in" *ngIf="modalTrasladoAbierto">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>⇄ Trasladar Insumo / Material</h3>
+                <button (click)="cerrarModales()" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Código del Material a Trasladar *</label>
+                    <input type="text" [(ngModel)]="codigoTraslado" placeholder="Ej: LAP-01" class="form-control" style="text-transform: uppercase;">
+                </div>
+                <div class="form-group">
+                    <label>Ubicación de Origen *</label>
+                    <select [(ngModel)]="origenTrasladoId" class="form-control">
+                        <option *ngFor="let dep of depositos" [value]="dep.id_deposito">
+                            {{ dep.nombre_d }}
+                        </option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Ubicación de Destino *</label>
+                    <select [(ngModel)]="destinoTrasladoId" class="form-control">
+                        <option *ngFor="let dep of depositos" [value]="dep.id_deposito">
+                            {{ dep.nombre_d }}
+                        </option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad a Trasladar *</label>
+                    <input type="number" [(ngModel)]="cantidadTraslado" min="1" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Motivo del Traslado</label>
+                    <input type="text" [(ngModel)]="motivoTraslado" placeholder="Ej: Abastecimiento de aula por inicio de actividades" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button (click)="trasladarMaterial()" class="btn btn-secondary w-full">Procesar Traslado</button>
+                <button (click)="cerrarModales()" class="btn btn-outline w-full">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: GESTIÓN DE CATEGORÍAS -->
+    <div class="modal-overlay animate-fade-in" *ngIf="modalCategoriasAbierto">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>🏷️ Gestión de Categorías</h3>
+                <button (click)="cerrarModales()" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="category-add-form">
+                    <input type="text" [(ngModel)]="nuevaCategoriaNombre" placeholder="Nueva Categoría (ej: Limpieza)" class="form-control inline-input">
+                    <button (click)="crearCategoria()" class="btn btn-purple">
+                        <i class="fas fa-plus"></i> Crear
+                    </button>
+                </div>
+                <div class="categories-list-container">
+                    <label>Categorías Registradas:</label>
+                    <div class="categories-list">
+                        <div class="category-item" *ngFor="let cat of categorias">
+                            <span class="bullet"><i class="fas fa-circle"></i></span>
+                            <span class="cat-name">{{ cat.nombre_categoria }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button (click)="cerrarModales()" class="btn btn-outline w-full">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: EDITAR PARÁMETROS DE STOCK -->
+    <div class="modal-overlay animate-fade-in" *ngIf="modalEdicionAbierto">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>✏️ Editar Insumo en Sala</h3>
+                <button (click)="cerrarModales()" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body" *ngIf="stockEdicionSeleccionado">
+                <div class="stock-info-header">
+                    <h4>{{ stockEdicionSeleccionado.producto?.descripcion }}</h4>
+                    <code>Código: {{ stockEdicionSeleccionado.producto?.codigo_corto }}</code>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad (Stock Actual) *</label>
+                    <input type="number" [(ngModel)]="cantidadEdicion" min="0" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Stock Mínimo (Alerta) *</label>
+                    <input type="number" [(ngModel)]="minimoEdicion" min="0" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button (click)="guardarEdicionStock()" class="btn btn-primary w-full">Guardar Cambios</button>
+                <button (click)="cerrarModales()" class="btn btn-outline w-full">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>

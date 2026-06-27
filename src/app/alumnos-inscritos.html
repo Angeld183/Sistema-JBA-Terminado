@@ -1,0 +1,335 @@
+<style>
+    .modulo-matricula {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+    }
+    .encabezado-seccion {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .encabezado-seccion h2 { margin: 0; color: #1e293b; font-size: 1.6rem; }
+    .encabezado-seccion p { margin: 4px 0 0 0; color: #64748b; font-size: 0.9rem; }
+    
+    /* BUSCADOR SUPERIOR */
+    .barra-superior-controles {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-bottom: 20px;
+        align-items: center;
+    }
+    .caja-buscar-contenedor {
+        position: relative;
+        width: 300px;
+    }
+    .caja-buscar-contenedor input {
+        width: 100%;
+        padding: 8px 12px 8px 35px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+    .caja-buscar-contenedor::before {
+        content: "🔍";
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.9rem;
+        color: #94a3b8;
+    }
+    .btn-volver-lista {
+        background: white; border: 1px solid #cbd5e1; color: #334155;
+        padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;
+    }
+    /* CONTENEDOR DE PESTAÑAS PREMIUM */
+    .pestanas-control-contenedor {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 2px;
+    }
+    .pestana-boton {
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        padding: 10px 16px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .pestana-boton:hover {
+        color: #1e293b;
+    }
+    .pestana-boton.pestana-activa {
+        color: #2563eb;
+        border-bottom-color: #2563eb;
+    }
+    .pestana-contador {
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 0.8rem;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-weight: bold;
+        transition: all 0.2s ease-in-out;
+    }
+    .pestana-boton.pestana-activa .pestana-contador {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+    
+    /* CONTENEDORES DE GRUPOS */
+    .grupo-seccion-tarjeta {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .cabecera-grupo-seccion {
+        background: #f8fafc;
+        padding: 12px 20px;
+        font-weight: bold;
+        color: #1e293b;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.95rem;
+    }
+    .fila-alumno-lista {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 20px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .fila-alumno-lista:last-child { border-bottom: none; }
+    .nombre-alumno-lista {
+        color: #334155;
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+    .acciones-alumno-lista {
+        display: flex;
+        gap: 8px;
+    }
+    .btn-ver-mas-azul {
+        background: #2b7bc7; color: white; border: none;
+        padding: 6px 14px; border-radius: 4px; cursor: pointer;
+        font-size: 0.85rem; font-weight: 500; transition: background 0.2s;
+    }
+    .btn-ver-mas-azul:hover { background: #1d5ca3; }
+    .btn-borrar-rojo {
+        background: #ef4444; color: white; border: none;
+        padding: 6px 10px; border-radius: 4px; cursor: pointer;
+        font-size: 0.85rem; transition: background 0.2s;
+    }
+    .btn-borrar-rojo:hover { background: #dc2626; }
+
+    /* ESTILO MODAL / DETALLE DE FICHA EXPANDIDA */
+    .modal-ficha-fondo {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.6); display: flex; justify-content: center;
+        align-items: center; z-index: 9999; padding: 20px;
+    }
+    .modal-ficha-contenido {
+        background: #f8f9fa; width: 100%; max-width: 1000px;
+        border-radius: 8px; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        position: relative; animation: desvanecerEntrada 0.3s ease-out;
+        max-height: 90vh; overflow-y: auto;
+    }
+    @keyframes desvanecerEntrada { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    .titulo-bloque {
+        font-size: 1.1rem; color: #1e3a8a; font-weight: bold;
+        border-bottom: 2px solid #3b82f6; padding-bottom: 6px;
+        margin-top: 20px; margin-bottom: 12px; text-transform: uppercase;
+    }
+    .titulo-bloque.verde { border-bottom-color: #10b981; }
+    .titulo-bloque.naranja { border-bottom-color: #f59e0b; }
+    
+    .fila-propiedades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+    .propiedad-caja { background: white; border: 1px solid #e2e8f0; padding: 10px; border-radius: 4px; }
+    .propiedad-caja label { display: block; font-size: 0.72rem; color: #64748b; font-weight: 600; margin-bottom: 2px; text-transform: uppercase; }
+    .propiedad-caja span { font-size: 0.95rem; color: #334155; font-weight: 500; }
+    .alerta-medica-caja { background: #fef2f2; border: 1px solid #fee2e2; border-radius: 6px; padding: 15px; color: #991b1b; margin-top: 15px; }
+    .alerta-medica-caja strong { display: block; margin-bottom: 4px; color: #ef4444; }
+    .btn-cerrar-modal { position: absolute; top: 15px; right: 15px; background: #64748b; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .btn-editar-verde { background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: background 0.2s; }
+    .btn-editar-verde:hover { background: #059669; }
+    .btn-guardar-azul { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .input-edit { width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.95rem; }
+</style>
+
+<div class="modulo-matricula">
+    <div class="encabezado-seccion">
+        <div>
+            <h2>Gestión de Matrículas</h2>
+            <p *ngIf="!mostrarDesertores">Listado y administración de alumnos activos en el preescolar Juan Bautista Arismendi</p>
+            <p *ngIf="mostrarDesertores" style="color: #ea580c; font-weight: 500;">Listado de alumnos inactivos o desertores del preescolar Juan Bautista Arismendi</p>
+        </div>
+    </div>
+
+    <div class="barra-superior-controles">
+        <div class="caja-buscar-contenedor">
+            <input type="text" [(ngModel)]="terminoBusqueda" placeholder="Buscar alumno por nombre o cédula...">
+        </div>
+        <button class="btn-volver-lista" (click)="inicializarModulo()">🔄 Recargar</button>
+        <button class="btn-volver-lista" style="background:#16a34a; color:white; border:none;" (click)="exportarAlumnosExcel()">📊 Exportar Excel</button>
+    </div>
+
+    <!-- PESTAÑAS DE CONTROL DE ESTADO -->
+    <div class="pestanas-control-contenedor">
+        <button [class.pestana-activa]="!mostrarDesertores" class="pestana-boton" (click)="setMostrarDesertores(false)">
+            👥 Alumnos Activos <span class="pestana-contador">{{ obtenerContadorActivos() }}</span>
+        </button>
+        <button [class.pestana-activa]="mostrarDesertores" class="pestana-boton" (click)="setMostrarDesertores(true)">
+            🚫 Desertores / Inactivos <span class="pestana-contador">{{ obtenerContadorDesertores() }}</span>
+        </button>
+    </div>
+
+    <div *ngIf="alumnosFiltrados.length === 0" style="text-align:center; padding:40px; color:#64748b;">
+        No se encontraron alumnos registrados que coincidan con la búsqueda.
+    </div>
+
+    <div *ngIf="alumnosFiltrados.length > 0">
+        <div class="grupo-seccion-tarjeta" *ngFor="let grupo of obtenerGrupos()">
+            <div class="cabecera-grupo-seccion">
+                {{ grupo }}
+            </div>
+            
+            <div *ngFor="let alumno of familiasAgrupadas[grupo]">
+                <div class="fila-alumno-lista">
+                    <span class="nombre-alumno-lista">
+                        👤 {{ alumno.nombre }} 
+                        <small style="color:#94a3b8; margin-left:10px;">(ID: {{ alumno.cedulaAlumno || 'N/A' }})</small>
+                    </span>
+                    <div class="acciones-alumno-lista">
+                        <button class="btn-ver-mas-azul" (click)="verFichaCompleta(alumno)">📂 Ver / Editar</button>
+                        <button *ngIf="!mostrarDesertores" class="btn-borrar-rojo" (click)="retirarAlumno(alumno)" title="Retirar Registro">✕ Retirar</button>
+                        <button *ngIf="mostrarDesertores" class="btn-editar-verde" (click)="activarAlumno(alumno)" title="Reincorporar Estudiante">✔️ Reincorporar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-ficha-fondo" *ngIf="modalAbierto" (click)="cerrarModalFondo($event)">
+    <div class="modal-ficha-contenido">
+        <button class="btn-cerrar-modal" (click)="modalAbierto = false">Cerrar ✕</button>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+            <div class="titulo-bloque" style="margin: 0;">👶 Datos del Alumno y Registro</div>
+            <button *ngIf="!modoEdicion" class="btn-editar-verde" (click)="habilitarEdicion()">✏️ Editar Datos</button>
+        </div>
+        
+        <div class="fila-propiedades" style="margin-top: 12px;">
+            <div class="propiedad-caja"><label>Cédula Escolar</label>
+                <span *ngIf="!modoEdicion">{{ alumnoSeleccionado.cedulaAlumno || 'N/A' }}</span>
+                <input *ngIf="modoEdicion" type="text" class="input-edit" [(ngModel)]="datosEdicion.cedulaAlumno" disabled>
+            </div>
+            <div class="propiedad-caja"><label>Nombre Completo</label>
+                <span *ngIf="!modoEdicion" style="font-weight:bold;">{{ alumnoSeleccionado.nombre }}</span>
+                <input *ngIf="modoEdicion" type="text" class="input-edit" [(ngModel)]="datosEdicion.nombre">
+            </div>
+            <div class="propiedad-caja">
+                <label>Estado Sistema</label>
+                <span [style.color]="alumnoSeleccionado.estado === 1 ? '#10b981' : '#ef4444'" style="font-weight: bold;">
+                    {{ alumnoSeleccionado.estado === 1 ? 'Inscrito' : 'Inactivo (Desertor)' }}
+                </span>
+            </div>
+            <div class="propiedad-caja"><label>Sala / Sección Asignada</label><span style="color:#2563eb; font-weight:bold;">{{ alumnoSeleccionado.sala }} - Sección {{ alumnoSeleccionado.seccion || 'A' }}</span></div>
+        </div>
+        
+        <div class="fila-propiedades" style="margin-top: 12px; grid-template-columns: 1fr 1fr 1fr 1fr;">
+            <div class="propiedad-caja"><label>Fecha de Registro</label><span>{{ alumnoSeleccionado.fechaRegistro || '15/06/2026' }}</span></div>
+            <div class="propiedad-caja"><label>Edad en Sistema</label>
+                <span *ngIf="!modoEdicion">{{ alumnoSeleccionado.edad || '3' }} años</span>
+                <input *ngIf="modoEdicion" type="number" class="input-edit" [(ngModel)]="datosEdicion.edad">
+            </div>
+            <div class="propiedad-caja"><label>Género / Sexo</label>
+                <span *ngIf="!modoEdicion">{{ alumnoSeleccionado.sexo || 'No especificado' }}</span>
+                <select *ngIf="modoEdicion" class="input-edit" [(ngModel)]="datosEdicion.sexo">
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                </select>
+            </div>
+            <div class="propiedad-caja"><label>Año de Entrada</label><span>{{ alumnoSeleccionado.anoEntrada || '2026' }}</span></div>
+        </div>
+
+        <div class="fila-propiedades" style="margin-top: 12px; grid-template-columns: 1fr;">
+            <div class="propiedad-caja"><label>Motivo / Observación de Registro</label>
+                <span *ngIf="!modoEdicion">{{ alumnoSeleccionado.motivo || 'Ninguno' }}</span>
+                <input *ngIf="modoEdicion" type="text" class="input-edit" [(ngModel)]="datosEdicion.motivo">
+            </div>
+        </div>
+
+        <div class="titulo-bloque verde">👤 Datos del Representante Legal Principal</div>
+        <div class="fila-propiedades" style="grid-template-columns: 2fr 1fr 1fr;">
+            <div class="propiedad-caja"><label>Nombre del Representante</label>
+                <span *ngIf="!modoEdicion">{{ alumnoSeleccionado.representante || 'N/A' }}</span>
+                <input *ngIf="modoEdicion" type="text" class="input-edit" [(ngModel)]="datosEdicion.representante">
+            </div>
+            <div class="propiedad-caja"><label>Cédula Identidad (Para cambiar Rep.)</label>
+                <span *ngIf="!modoEdicion">{{ alumnoSeleccionado.cedula || 'N/A' }}</span>
+                <input *ngIf="modoEdicion" type="text" class="input-edit" [(ngModel)]="datosEdicion.cedula">
+            </div>
+            <div class="propiedad-caja"><label>Teléfono Principal</label>
+                <span *ngIf="!modoEdicion" style="color:#16a34a; font-weight:bold;">{{ alumnoSeleccionado.repTelefono || 'N/A' }}</span>
+                <input *ngIf="modoEdicion" type="text" class="input-edit" [(ngModel)]="datosEdicion.repTelefono">
+            </div>
+        </div>
+
+        <div class="titulo-bloque naranja">📞 Historial Familiar y Contactos de Emergencia</div>
+        <div class="fila-propiedades" style="grid-template-columns: 2fr 1fr 1fr; margin-bottom: 12px;">
+            <div class="propiedad-caja" style="background:#fefbf3;"><label>👩 Nombre de la Madre</label>
+                <span *ngIf="!modoEdicion">{{ alumnoSeleccionado.nombreMadre || 'No Registrado' }}</span>
+                <input *ngIf="modoEdicion" type="text" class="input-edit" [(ngModel)]="datosEdicion.nombreMadre">
+            </div>
+            <div class="propiedad-caja" style="background:#fefbf3;"><label>Cédula Madre</label>
+                <span *ngIf="!modoEdicion">{{ alumnoSeleccionado.ciMadre || 'N/A' }}</span>
+                <input *ngIf="modoEdicion" type="text" class="input-edit" [(ngModel)]="datosEdicion.ciMadre">
+            </div>
+            <div class="propiedad-caja" style="background:#fefbf3;"><label>Teléfono Madre</label>
+                <span *ngIf="!modoEdicion">{{ alumnoSeleccionado.telMadre || 'N/A' }}</span>
+                <input *ngIf="modoEdicion" type="text" class="input-edit" [(ngModel)]="datosEdicion.telMadre">
+            </div>
+        </div>
+        <div class="fila-propiedades" style="grid-template-columns: 2fr 1fr 1fr;">
+            <div class="propiedad-caja" style="background:#fefbf3;"><label>👨 Nombre del Padre</label>
+                <span *ngIf="!modoEdicion">{{ alumnoSeleccionado.nombrePadre || 'No Registrado' }}</span>
+                <input *ngIf="modoEdicion" type="text" class="input-edit" [(ngModel)]="datosEdicion.nombrePadre">
+            </div>
+            <div class="propiedad-caja" style="background:#fefbf3;"><label>Cédula Padre</label>
+                <span *ngIf="!modoEdicion">{{ alumnoSeleccionado.ciPadre || 'N/A' }}</span>
+                <input *ngIf="modoEdicion" type="text" class="input-edit" [(ngModel)]="datosEdicion.ciPadre">
+            </div>
+            <div class="propiedad-caja" style="background:#fefbf3;"><label>Teléfono Padre</label>
+                <span *ngIf="!modoEdicion">{{ alumnoSeleccionado.telPadre || 'N/A' }}</span>
+                <input *ngIf="modoEdicion" type="text" class="input-edit" [(ngModel)]="datosEdicion.telPadre">
+            </div>
+        </div>
+
+        <div class="alerta-medica-caja">
+            <strong>❤️ CONDICIÓN CARDIOVASCULAR / HISTORIAL MÉDICO:</strong>
+            <span *ngIf="!modoEdicion">{{ alumnoSeleccionado.historialMedico || 'Sin observaciones.' }}</span>
+            <input *ngIf="modoEdicion" type="text" class="input-edit" [(ngModel)]="datosEdicion.historialMedico">
+        </div>
+
+        <div *ngIf="modoEdicion" style="margin-top: 20px; text-align: right;">
+            <button class="btn-volver-lista" style="margin-right: 10px;" (click)="cancelarEdicion()">Cancelar</button>
+            <button class="btn-guardar-azul" (click)="guardarCambiosEdicion()">💾 Guardar Cambios</button>
+        </div>
+    </div>
+</div>

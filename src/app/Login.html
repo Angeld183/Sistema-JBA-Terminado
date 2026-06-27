@@ -1,0 +1,32 @@
+<div class="login-container">
+    <img src="logo.png" alt="Logo" class="logo">
+    <h1>Preescolar Juan Bautista Arismendi</h1>
+    <p class="subtitle">Sistema de Gestión Escolar</p>
+    <div class="divider"></div>
+
+    <!-- Mensaje de error dinámico -->
+    @if (errorMessage) {
+        <div class="error-alert" style="color: #ff6b6b; margin-bottom: 15px; font-size: 0.9rem; text-align: center;">
+            <i class="fa-solid fa-triangle-exclamation"></i> {{ errorMessage }}
+        </div>
+    }
+
+    <div class="input-group">
+        <i class="fa-solid fa-user"></i>
+        <input type="text" #cedulaInput placeholder="Cédula de Identidad (Usuario)" (keyup.enter)="ingresar(cedulaInput.value, passwordInput.value)">
+    </div>
+
+    <div class="input-group">
+        <i class="fa-solid fa-lock"></i>
+        <input type="password" #passwordInput id="password" placeholder="Contraseña" (keyup.enter)="ingresar(cedulaInput.value, passwordInput.value)">
+        <i class="fa-solid fa-eye toggle-password" (click)="togglePassword()"></i>
+    </div>
+
+    <button class="btn-login" [disabled]="loading" (click)="ingresar(cedulaInput.value, passwordInput.value)">
+        @if (loading) {
+            <i class="fa-solid fa-spinner fa-spin"></i> Conectando...
+        } @else {
+            <i class="fa-solid fa-right-to-bracket"></i> Entrar
+        }
+    </button>
+</div>

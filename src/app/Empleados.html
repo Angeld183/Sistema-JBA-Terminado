@@ -1,0 +1,225 @@
+<div class="modulo-header">
+    <div class="header-info">
+        <h2>Gestión de Empleados {{ mostrarInactivos ? '(Inactivos)' : '' }}</h2>
+        <p class="subtitle">Personal docente y administrativo del preescolar Juan Bautista Arismendi</p>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+        <button type="button" class="btn-volver-lista" style="background:#16a34a; color:white; border:none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px;" (click)="exportarEmpleadosExcel()">
+            <i class="fas fa-file-excel"></i> Exportar Excel
+        </button>
+        <button type="button" class="btn-volver-lista" style="background:#64748b; color:white; border:none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 6px;" (click)="toggleVerInactivos()">
+            <i class="fas" [ngClass]="mostrarInactivos ? 'fa-user-check' : 'fa-user-slash'"></i> 
+            {{ mostrarInactivos ? 'Ver Activos' : 'Ver Inactivos' }}
+        </button>
+        <button class="btn-agregar" (click)="abrirModal()"><i class="fas fa-plus-circle"></i> Agregar Empleado</button>
+    </div>
+</div>
+
+<div class="tarjetas-container" id="lista-empleados">
+    @if (loading) {
+        <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #7f8c8d;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2.5rem; margin-bottom: 10px;"></i>
+            <p>Cargando personal desde el servidor...</p>
+        </div>
+    }
+    @if (errorMessage) {
+        <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #dc3545;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 10px;"></i>
+            <h3>Error al conectar con la Base de Datos</h3>
+            <p>{{ errorMessage }}</p>
+        </div>
+    }
+    @if (!loading && !errorMessage && listaEmpleados.length === 0) {
+        <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #7f8c8d;">
+            <i class="fas fa-info-circle" style="font-size: 2.5rem; margin-bottom: 10px;"></i>
+            <p>No hay personal registrado en la base de datos.</p>
+        </div>
+    }
+    
+    @for (empleado of listaEmpleados; track empleado.cedula) {
+        <div class="tarjeta-empleado" 
+             [class.transparente]="empleado.oculto" 
+             (click)="empleado.oculto = false">
+            
+            <div class="avatar" [ngClass]="empleado.claseColor">{{ empleado.iniciales }}</div>
+            
+            <div class="info-oculta">
+                <h3>{{ empleado.nombre }}</h3>
+                
+                @if (empleado.cargo === 'Docente') {
+                    <span class="tag-aula">Aula: {{ empleado.aula }}</span>
+                    <div class="detalles-empleado">
+                        <p><strong>Cargo:</strong> {{ empleado.cargo }}</p>
+                        <p><strong>Sección:</strong> {{ empleado.seccion }}</p>
+                        <p><strong>Cédula:</strong> {{ empleado.cedula }}</p>
+                        <p><strong>Tel:</strong> {{ empleado.telefono }}</p>
+                    </div>
+                } @else {
+                    <span class="tag-aula general">{{ empleado.cargo }}</span>
+                    <div class="detalles-empleado">
+                        <p><strong>Cargo:</strong> {{ empleado.cargo }}</p>
+                        <p><strong>Cédula:</strong> {{ empleado.cedula }}</p>
+                        <p><strong>Tel:</strong> {{ empleado.telefono }}</p>
+                    </div>
+                }
+
+                <!-- Zona de acciones administrativas segun jerarquia -->
+                <div class="acciones-empleado-card" style="margin-top: 15px; display: flex; gap: 8px; justify-content: flex-end; align-items: center;" *ngIf="nivelUsuarioLogueado >= empleado.nivel">
+                    <!-- Botón para asignar módulos, solo nivel 10 y si no es inactivo -->
+                    <button type="button" class="btn-editar-verde" style="background:#8b5cf6;" (click)="$event.stopPropagation(); abrirModalModulos(empleado)" *ngIf="nivelUsuarioLogueado === 10 && !mostrarInactivos" title="Asignar Módulos">
+                        <i class="fas fa-tasks"></i> Módulos
+                    </button>
+                    
+                    <button type="button" class="btn-ver-mas-azul" (click)="$event.stopPropagation(); abrirModalEdicion(empleado)" *ngIf="!mostrarInactivos">
+                        <i class="fas fa-edit"></i> Modificar
+                    </button>
+                    
+                    <button type="button" class="btn-borrar-rojo" (click)="$event.stopPropagation(); desactivarEmpleado(empleado)" *ngIf="!mostrarInactivos">
+                        <i class="fas fa-user-slash"></i> Desactivar
+                    </button>
+
+                    <!-- Botón para reactivar empleado inactivo -->
+                    <button type="button" class="btn-editar-verde" style="background:#16a34a;" (click)="$event.stopPropagation(); activarEmpleado(empleado)" *ngIf="mostrarInactivos">
+                        <i class="fas fa-user-check"></i> Activar
+                    </button>
+                </div>
+            </div>
+            
+            <div class="click-placeholder"><i class="fas fa-eye"></i> Ver Datos</div>
+        </div>
+    }
+</div>
+
+@if (modalAbierto) {
+    <div class="modal" style="display: flex;">
+        <div class="modal-content">
+            <span class="close-modal" (click)="cerrarModal()">&times;</span>
+            <h3>{{ editando ? 'Modificar Personal' : 'Registrar Nuevo Personal' }}</h3>
+            
+            <form (submit)="editando ? guardarEdicion($event) : registrarEmpleado($event)">
+                <div class="form-group">
+                    <label>Nombre Completo:</label>
+                    <input type="text" name="nombre" required placeholder="Ej. Juan Pérez" [value]="empleadoAEditar.nombre || ''">
+                </div>
+                <div class="form-group">
+                    <label>Cédula de Identidad:</label>
+                    <input type="text" name="cedula" required placeholder="Ej. V-12.345.678" [value]="empleadoAEditar.cedula || ''" [readonly]="editando" [style.background]="editando ? '#f1f5f9' : 'white'">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono:</label>
+                    <input type="text" name="telefono" required placeholder="Ej. 0412-1234567" [value]="empleadoAEditar.telefono || ''">
+                </div>
+                <div class="form-group">
+                    <label>Cargo de Trabajo:</label>
+                    <select name="cargo" required #cargoSelect (change)="evaluarCargo(cargoSelect.value)" [value]="empleadoAEditar.cargo || ''">
+                        <option value="">-- Seleccione un Cargo --</option>
+                        <option value="Docente">Docente</option>
+                        <option value="Obrero">Obrero/a</option>
+                        <option value="Cocinero">Cocinero/a</option>
+                        <option value="Administrativo">Administrativo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nivel Jerárquico (Rango):</label>
+                    <select name="nivel" required [value]="empleadoAEditar.nivel || '1'">
+                        <option value="1" *ngIf="nivelUsuarioLogueado >= 1">1 - Personal General</option>
+                        <option value="2" *ngIf="nivelUsuarioLogueado >= 2">2 - Obrero / Cocinero</option>
+                        <option value="5" *ngIf="nivelUsuarioLogueado >= 5">5 - Docente</option>
+                        <option value="6" *ngIf="nivelUsuarioLogueado >= 6">6 - Vocero</option>
+                        <option value="7" *ngIf="nivelUsuarioLogueado >= 7">7 - Secretaria (Operativo)</option>
+                        <option value="8" *ngIf="nivelUsuarioLogueado >= 8">8 - Subdirector (Operativo)</option>
+                        <option value="9" *ngIf="nivelUsuarioLogueado >= 9">9 - Director (Administrador)</option>
+                        <option value="10" *ngIf="nivelUsuarioLogueado >= 10">10 - Sistemas (Administrador)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña de Acceso:</label>
+                    <input type="password" name="contrasena" [required]="!editando" [placeholder]="editando ? 'Dejar en blanco para conservar' : 'Mínimo 8 caracteres'">
+                </div>
+
+                <div class="form-group">
+                    <label>Aula Asignada {{ esDocente ? '*' : '(Opcional)' }}:</label>
+                    <select name="id_aula" [required]="esDocente" (change)="alSeleccionarAula($event)" [value]="empleadoAEditar.id_aula || ''">
+                        <option value="">-- Seleccione una Aula --</option>
+                        <option *ngFor="let m of matriculasDisponibles" [value]="m.id_aula">
+                            {{ m.aula }} - Sección {{ m.seccion }} ({{ m.turno }})
+                        </option>
+                    </select>
+                </div>
+
+                @if (esDocente) {
+                    <div id="campos-docente">
+                        <div class="form-group">
+                            <label>Profesor Suplente (Opcional):</label>
+                            <select name="suplente" [value]="empleadoAEditar.suplenteCi || ''">
+                                <option value="">-- Ninguno --</option>
+                                <option *ngFor="let p of listaEmpleados" [value]="p.cedula">
+                                    {{ p.nombre }} (CI: {{ p.cedula }})
+                                </option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Profesor de Turno (Opcional):</label>
+                            <select name="turnoDocente" [value]="empleadoAEditar.turnoCi || ''">
+                                <option value="">-- Ninguno --</option>
+                                <option *ngFor="let p of listaEmpleados" [value]="p.cedula">
+                                    {{ p.nombre }} (CI: {{ p.cedula }})
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                }
+
+                <button type="submit" class="btn-confirmar">{{ editando ? 'Guardar Cambios' : 'Confirmar Registro' }}</button>
+            </form>
+        </div>
+    </div>
+}
+
+@if (modalModulosAbierto) {
+    <div class="modal" style="display: flex; z-index: 20000;">
+        <div class="modal-content" style="max-width: 500px;">
+            <span class="close-modal" (click)="cerrarModalModulos()">&times;</span>
+            <h3 style="color: #1e3a8a; margin-bottom: 15px;"><i class="fas fa-tasks"></i> Asignación de Módulos</h3>
+            <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 20px;">
+                Selecciona los módulos a los que <strong>{{ empleadoAEditar.nombre }}</strong> tendrá acceso en el menú lateral:
+            </p>
+            
+            <form (submit)="$event.preventDefault(); guardarModulos()">
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                    <label style="display: flex; align-items: center; gap: 10px; font-weight: 500; color: #334155; cursor: pointer;">
+                        <input type="checkbox" [(ngModel)]="modulosSeleccionados['Personal']" name="mod_personal" style="width: 18px; height: 18px; cursor: pointer;"> 
+                        <i class="fas fa-users" style="color: #4f46e5; width: 20px; text-align: center;"></i> Personal (Gestión de Empleados)
+                    </label>
+                    
+                    <label style="display: flex; align-items: center; gap: 10px; font-weight: 500; color: #334155; cursor: pointer;">
+                        <input type="checkbox" [(ngModel)]="modulosSeleccionados['Inscripciones']" name="mod_inscripciones" style="width: 18px; height: 18px; cursor: pointer;"> 
+                        <i class="fas fa-graduation-cap" style="color: #10b981; width: 20px; text-align: center;"></i> Inscripciones (Ingreso / Listas)
+                    </label>
+                    
+                    <label style="display: flex; align-items: center; gap: 10px; font-weight: 500; color: #334155; cursor: pointer;">
+                        <input type="checkbox" [(ngModel)]="modulosSeleccionados['Matriculas']" name="mod_matriculas" style="width: 18px; height: 18px; cursor: pointer;"> 
+                        <i class="fas fa-school" style="color: #3b82f6; width: 20px; text-align: center;"></i> Matrículas (Salones)
+                    </label>
+                    
+                    <label style="display: flex; align-items: center; gap: 10px; font-weight: 500; color: #334155; cursor: pointer;">
+                        <input type="checkbox" [(ngModel)]="modulosSeleccionados['Fondos']" name="mod_fondos" style="width: 18px; height: 18px; cursor: pointer;"> 
+                        <i class="fas fa-dollar-sign" style="color: #f59e0b; width: 20px; text-align: center;"></i> Fondos (Gestión de Caja)
+                    </label>
+                    
+                    <label style="display: flex; align-items: center; gap: 10px; font-weight: 500; color: #334155; cursor: pointer;">
+                        <input type="checkbox" [(ngModel)]="modulosSeleccionados['Asistencia']" name="mod_asistencia" style="width: 18px; height: 18px; cursor: pointer;"> 
+                        <i class="fas fa-clock" style="color: #ec4899; width: 20px; text-align: center;"></i> Asistencia (Control Diario)
+                    </label>
+                </div>
+                
+                <div style="text-align: right;">
+                    <button type="button" class="btn-volver-lista" style="margin-right: 10px;" (click)="cerrarModalModulos()">Cancelar</button>
+                    <button type="submit" class="btn-guardar-azul" style="padding: 8px 20px; border-radius: 6px; background: #8b5cf6; color: white; border: none; font-weight: bold; cursor: pointer;">
+                        💾 Guardar Permisos
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+}

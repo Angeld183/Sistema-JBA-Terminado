@@ -1,0 +1,122 @@
+<input type="checkbox" id="menu-toggle">
+
+<header class="top-header">
+    <div class="logo-container">
+        <label for="menu-toggle" class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </label>
+        <img src="logo.png" alt="Logo" class="logo-img">
+    </div>
+    
+    <h1 class="title">Preescolar Juan Bautista Arismendi</h1>
+    
+    <div class="user-profile-header" style="display: flex; align-items: center; gap: 15px; margin-right: 15px;">
+        <span style="color: #fff; font-weight: 500; font-size: 0.95rem;">{{ userDisplayName }}</span>
+        <button class="logout-btn" (click)="salir()">
+            Cerrar sesión <i class="fas fa-sign-out-alt"></i>
+        </button>
+    </div>
+</header>
+
+<nav class="sidebar">
+    <ul class="nav-links">
+        <span class="active-module"><i class="fas fa-boxes"></i> Módulos de Gestión</span>
+        <li class="dropdown">
+            <ul class="submenu">
+                
+                <li class="has-children" [class.open]="submenuPersonalAbierto" *ngIf="tieneAcceso('Personal')">
+                    <a style="cursor: pointer;" class="toggle-sub-modulo" (click)="toggleSubmenu($event)">
+                        <i class="fas fa-user"></i> Personal 
+                        <i class="fas fa-chevron-down arrow-icon"></i>
+                    </a>
+                    <ul class="inner-submenu">
+                        <li>
+                            <a routerLink="/menu/empleados" class="modulo-link">
+                                <i class="fas fa-users"></i> Empleados
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="has-children" [class.open]="submenuInscripcionesAbierto" *ngIf="tieneAcceso('Inscripciones')">
+                    <a style="cursor: pointer;" class="toggle-sub-modulo" (click)="toggleSubmenuInscripciones($event)">
+                        <i class="fas fa-graduation-cap"></i> Inscripciones
+                        <i class="fas fa-chevron-down arrow-icon"></i>
+                    </a>
+                    <ul class="inner-submenu">
+                        <li>
+                            <a routerLink="/menu/nueva-inscripcion" class="modulo-link">
+                                <i class="fas fa-clipboard-list"></i> Nueva Inscripción
+                            </a>
+                        </li>
+                        <li>
+                            <a routerLink="/menu/alumnos-inscritos" class="modulo-link">
+                                <i class="fas fa-list-ol"></i> Alumnos Inscritos
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li *ngIf="tieneAcceso('Inventario')">
+                    <a routerLink="/menu/inventario" class="modulo-link">
+                        <i class="fas fa-archive"></i> Inventario
+                    </a>
+                </li>
+                
+                <li class="has-children" [class.open]="submenuMatriculasAbierto" *ngIf="tieneAcceso('Matriculas')">
+                    <a style="cursor: pointer;" class="toggle-sub-modulo" (click)="toggleSubmenuMatriculas($event)">
+                        <i class="fas fa-id-card"></i> Matrículas
+                        <i class="fas fa-chevron-down arrow-icon"></i>
+                    </a>
+                    <ul class="inner-submenu">
+                        <li>
+                            <a routerLink="/menu/salones" class="modulo-link">
+                                <i class="fas fa-school"></i> Salones
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="has-children" [class.open]="submenuFondosAbierto" *ngIf="tieneAcceso('Fondos')">
+                    <a style="cursor: pointer;" class="toggle-sub-modulo" (click)="toggleSubmenuFondos($event)">
+                        <i class="fas fa-dollar-sign"></i> Fondos
+                        <i class="fas fa-chevron-down arrow-icon"></i>
+                    </a>
+                    <ul class="inner-submenu">
+                        <li>
+                            <a routerLink="/menu/gestion-caja" class="modulo-link">
+                                <i class="fas fa-wallet"></i> Gestión de Caja
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="has-children" [class.open]="submenuAsistenciaAbierto" *ngIf="tieneAcceso('Asistencia')">
+                    <a style="cursor: pointer;" class="toggle-sub-modulo" (click)="toggleSubmenuAsistencia($event)">
+                        <i class="fas fa-clock"></i> Asistencia
+                        <i class="fas fa-chevron-down arrow-icon"></i>
+                    </a>
+                    <ul class="inner-submenu">
+                        <li>
+                            <a routerLink="/menu/asistencia" class="modulo-link">
+                                <i class="fas fa-user-check"></i> Control Diario
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+            </ul>
+        </li>
+    </ul>
+</nav>
+
+<main class="content" id="contenedor-principal">
+    <div class="lobby-welcome-container" *ngIf="router.url === '/menu'">
+        <h2 class="welcome-title">Bienvenido al Sistema de Gestión Administrativa del Preescolar C.E.I GRAL. Juan Bautista Arismendi</h2>
+        <p class="welcome-subtitle">Por favor, use el menú lateral izquierdo para navegar entre los módulos.</p>
+    </div>
+
+    <router-outlet></router-outlet>
+</main>

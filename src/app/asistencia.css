@@ -1,0 +1,74 @@
+.contenedor-asistencia {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 20px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.tarjeta-modulo { 
+    background: #fff; 
+    padding: 25px; 
+    border-radius: 12px; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+}
+
+.header-tarjeta { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 25px; 
+    border-bottom: 1px solid #f4f7f6;
+    padding-bottom: 15px;
+}
+
+.header-tarjeta h2 { 
+    color: #2c3e50; 
+    font-size: 1.5rem; 
+    margin: 0;
+}
+
+#tabla-asistencia { 
+    width: 100%; 
+    border-collapse: separate; 
+    border-spacing: 0; 
+}
+
+#tabla-asistencia th { 
+    color: #3498db; 
+    text-transform: uppercase; 
+    font-size: 0.75rem; 
+    padding: 15px; 
+    border-bottom: 2px solid #f4f7f6; 
+    text-align: left; 
+    font-weight: bold;
+}
+
+#tabla-asistencia td { 
+    padding: 15px; 
+    border-bottom: 1px solid #f4f7f6; 
+    color: #2c3e50; 
+    font-size: 14px;
+}
+
+.empleado-nombre {
+    font-weight: 500;
+}
+
+.btn-qr { 
+    background-color: #27ae60; 
+    color: white; 
+    border: none; 
+    padding: 6px 15px; 
+    border-radius: 5px; 
+    cursor: pointer; 
+    font-weight: 600; 
+    font-size: 0.8rem; 
+    transition: background 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-qr:hover { 
+    background-color: #219150; 
+}
