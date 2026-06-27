@@ -230,6 +230,11 @@ El sistema implementa un control de acceso basado en niveles jerárquicos:
 ## Autores
 
 - Equipo de desarrollo del Preescolar Juan Bautista Arismendi
+Angel Torres
+Angel Cardozo
+Enrique Torres
+Nolberth Ortigoza
+Maximiliano Barrios
 
 ## Licencia
 
