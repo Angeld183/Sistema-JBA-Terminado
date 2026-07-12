@@ -7,6 +7,35 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script>
+    (function() {
+      const originalFetch = window.fetch;
+      window.fetch = function(input, init) {
+        if (typeof input === 'string') {
+          if (input.includes('localhost:5188')) {
+            const hostname = window.location.hostname;
+            if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+              input = input.replace('localhost:5188', hostname + ':5188');
+            }
+          }
+        } else if (input && typeof input === 'object' && typeof input.url === 'string') {
+          if (input.url.includes('localhost:5188')) {
+            const hostname = window.location.hostname;
+            if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+              const newUrl = input.url.replace('localhost:5188', hostname + ':5188');
+              try {
+                input = new Request(newUrl, input);
+              } catch (e) {
+                // Fallback in case of strict Request construction errors
+                Object.defineProperty(input, 'url', { value: newUrl });
+              }
+            }
+          }
+        }
+        return originalFetch(input, init);
+      };
+    })();
+  </script>
 </head>
 
 <body>

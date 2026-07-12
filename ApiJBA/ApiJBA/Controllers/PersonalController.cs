@@ -293,6 +293,42 @@ namespace ApiJBA.Controllers
 
             // Cambiar el estado a false (inactivo/desactivado)
             personal.estado = false;
+
+            // Desasignar de cualquier sección/aula (matrícula) que tenga asignada
+            var matriculasAsignadas = await context.Matriculas
+                .Where(m => m.ci_p == ci)
+                .ToListAsync();
+
+            foreach (var mat in matriculasAsignadas)
+            {
+                mat.ci_p = null;
+                // Limpiar también los datos de suplente/turno en motivo_m
+                mat.motivo_m = null;
+            }
+
+            // Limpiar datos de aula/sección del campo tipo_preparacion del personal
+            if (!string.IsNullOrEmpty(personal.tipo_preparacion))
+            {
+                try
+                {
+                    var prep = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(personal.tipo_preparacion);
+                    if (prep != null)
+                    {
+                        prep["id_aula"] = null!;
+                        prep["aula"] = "";
+                        prep["seccion"] = "";
+                        prep["suplenteCi"] = "";
+                        prep["suplenteNombre"] = "";
+                        prep["turnoCi"] = "";
+                        prep["turnoNombre"] = "";
+                        personal.tipo_preparacion = System.Text.Json.JsonSerializer.Serialize(prep);
+                    }
+                }
+                catch
+                {
+                    // Si tipo_preparacion no es JSON válido, dejarlo como está
+                }
+            }
             
             // Opcional: También podríamos registrar la fecha de salida (fs_p) si aplica
             // personal.fs_p = DateTime.Now;

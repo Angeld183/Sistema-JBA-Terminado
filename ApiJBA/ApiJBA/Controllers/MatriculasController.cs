@@ -59,16 +59,20 @@ namespace ApiJBA.Controllers
                 return NotFound($"La matrícula con el ID {id} no existe.");
             }
 
-            var existePersonal = await context.Personal.AnyAsync(x => x.ci_p == dto.ci_p);
-            if (!existePersonal)
+            // Solo validar existencia del personal si se asigna un docente (ci_p no vacío)
+            if (!string.IsNullOrWhiteSpace(dto.ci_p))
             {
-                return BadRequest($"El personal con cédula {dto.ci_p} no existe.");
+                var existePersonal = await context.Personal.AnyAsync(x => x.ci_p == dto.ci_p);
+                if (!existePersonal)
+                {
+                    return BadRequest($"El personal con cédula {dto.ci_p} no existe.");
+                }
             }
 
             matricula.seccion = dto.seccion;
             matricula.aula = dto.aula;
             matricula.turno = dto.turno;
-            matricula.ci_p = dto.ci_p;
+            matricula.ci_p = string.IsNullOrWhiteSpace(dto.ci_p) ? null : dto.ci_p;
             matricula.capacidad = dto.capacidad;
             matricula.varones = dto.varones;
             matricula.hembras = dto.hembras;

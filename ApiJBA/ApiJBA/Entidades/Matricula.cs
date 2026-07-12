@@ -27,10 +27,9 @@ namespace ApiJBA.Entidades
         [StringLength(20)]
         public string turno { get; set; } = default!;
 
-        [Required]
         [Column(TypeName = "varchar(16)")]
         [StringLength(16)]
-        public string ci_p { get; set; } = default!;
+        public string? ci_p { get; set; }
 
         [Required]
         public int capacidad { get; set; }
@@ -50,7 +49,7 @@ namespace ApiJBA.Entidades
 
         // Propiedades de navegación
         [ForeignKey("ci_p")]
-        public Personal Personal { get; set; } = default!;
+        public Personal? Personal { get; set; }
 
         public ICollection<Inscripcion> Inscripciones { get; set; } = new List<Inscripcion>();
     }

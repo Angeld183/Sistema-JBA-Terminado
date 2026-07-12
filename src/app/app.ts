@@ -420,10 +420,11 @@ export class EmpleadosComponent implements OnInit {
     const suplenteCi = formData.get('suplente') as string;
     const turnoCi = formData.get('turnoDocente') as string;
 
-    const id_aula = idAulaSelected ? parseInt(idAulaSelected, 10) : null;
-    const suplente = this.listaEmpleados.find(e => e.cedula === suplenteCi);
+    const esDocente = cargo === 'Docente';
+    const id_aula = (esDocente && idAulaSelected) ? parseInt(idAulaSelected, 10) : null;
+    const suplente = esDocente ? this.listaEmpleados.find(e => e.cedula === suplenteCi) : null;
     const suplenteNombre = suplente ? suplente.nombre : "";
-    const turnoDoc = this.listaEmpleados.find(e => e.cedula === turnoCi);
+    const turnoDoc = esDocente ? this.listaEmpleados.find(e => e.cedula === turnoCi) : null;
     const turnoNombre = turnoDoc ? turnoDoc.nombre : "";
 
     const aula = id_aula ? this.aulaSeleccionada : "";
@@ -436,10 +437,10 @@ export class EmpleadosComponent implements OnInit {
       aula: aula,
       seccion: seccion,
       telefono: telefono,
-      suplenteCi: suplenteCi || "",
-      suplenteNombre: suplenteNombre,
-      turnoCi: turnoCi || "",
-      turnoNombre: turnoNombre
+      suplenteCi: esDocente ? (suplenteCi || "") : "",
+      suplenteNombre: esDocente ? suplenteNombre : "",
+      turnoCi: esDocente ? (turnoCi || "") : "",
+      turnoNombre: esDocente ? turnoNombre : ""
     };
 
     const payload = {
@@ -545,10 +546,11 @@ export class EmpleadosComponent implements OnInit {
     const suplenteCi = formData.get('suplente') as string;
     const turnoCi = formData.get('turnoDocente') as string;
 
-    const id_aula = idAulaSelected ? parseInt(idAulaSelected, 10) : null;
-    const suplente = this.listaEmpleados.find(e => e.cedula === suplenteCi);
+    const esDocenteVal = cargo === 'Docente';
+    const id_aula = (esDocenteVal && idAulaSelected) ? parseInt(idAulaSelected, 10) : null;
+    const suplente = esDocenteVal ? this.listaEmpleados.find(e => e.cedula === suplenteCi) : null;
     const suplenteNombre = suplente ? suplente.nombre : "";
-    const turnoDoc = this.listaEmpleados.find(e => e.cedula === turnoCi);
+    const turnoDoc = esDocenteVal ? this.listaEmpleados.find(e => e.cedula === turnoCi) : null;
     const turnoNombre = turnoDoc ? turnoDoc.nombre : "";
 
     const aula = id_aula ? this.aulaSeleccionada : "";
@@ -561,10 +563,10 @@ export class EmpleadosComponent implements OnInit {
       aula: aula,
       seccion: seccion,
       telefono: telefono,
-      suplenteCi: suplenteCi || "",
-      suplenteNombre: suplenteNombre,
-      turnoCi: turnoCi || "",
-      turnoNombre: turnoNombre
+      suplenteCi: esDocenteVal ? (suplenteCi || "") : "",
+      suplenteNombre: esDocenteVal ? suplenteNombre : "",
+      turnoCi: esDocenteVal ? (turnoCi || "") : "",
+      turnoNombre: esDocenteVal ? turnoNombre : ""
     };
 
     const payload = {
@@ -599,8 +601,67 @@ export class EmpleadosComponent implements OnInit {
       });
 
       if (response.ok) {
+        // Obtener el cargo anterior del empleado antes de la edición
+        const cargoAnterior = this.empleadoAEditar.cargo;
+        const idAulaAnterior = this.empleadoAEditar.id_aula;
+
+        // Si el cargo cambió de Docente a otro rol, o se desactivó, desasignar la matrícula anterior
+        if (cargoAnterior === 'Docente' && cargo !== 'Docente' && idAulaAnterior) {
+          const matAnterior = this.matriculasDisponibles.find(m => m.id_aula === idAulaAnterior);
+          if (matAnterior) {
+            const matPayloadLimpiar = {
+              seccion: matAnterior.seccion,
+              aula: matAnterior.aula,
+              turno: matAnterior.turno,
+              ci_p: null,
+              capacidad: matAnterior.capacidad,
+              varones: matAnterior.varones,
+              hembras: matAnterior.hembras,
+              estado_m: matAnterior.estado_m,
+              motivo_m: null
+            };
+
+            await fetch(`http://localhost:5188/api/matriculas/${idAulaAnterior}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+              },
+              body: JSON.stringify(matPayloadLimpiar)
+            });
+          }
+        }
+
         // Si es docente y tiene aula asignada, actualizar la aula/matrícula en la DB
         if (cargo === 'Docente' && id_aula) {
+          // Si cambió de sección, primero limpiar la anterior
+          if (idAulaAnterior && idAulaAnterior !== id_aula) {
+            const matAnterior = this.matriculasDisponibles.find(m => m.id_aula === idAulaAnterior);
+            if (matAnterior) {
+              const matPayloadLimpiar = {
+                seccion: matAnterior.seccion,
+                aula: matAnterior.aula,
+                turno: matAnterior.turno,
+                ci_p: null,
+                capacidad: matAnterior.capacidad,
+                varones: matAnterior.varones,
+                hembras: matAnterior.hembras,
+                estado_m: matAnterior.estado_m,
+                motivo_m: null
+              };
+
+              await fetch(`http://localhost:5188/api/matriculas/${idAulaAnterior}`, {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(matPayloadLimpiar)
+              });
+            }
+          }
+
+          // Asignar la nueva sección
           const matFind = this.matriculasDisponibles.find(m => m.id_aula === id_aula);
           if (matFind) {
             const motivoObj = {

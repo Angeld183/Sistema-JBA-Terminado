@@ -157,9 +157,8 @@ namespace ApiJBA.DTOs
         [StringLength(20)]
         public string turno { get; set; } = default!;
 
-        [Required]
         [StringLength(16)]
-        public string ci_p { get; set; } = default!;
+        public string? ci_p { get; set; }
 
         [Required]
         public int capacidad { get; set; }

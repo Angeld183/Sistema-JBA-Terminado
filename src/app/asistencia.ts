@@ -163,7 +163,7 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
 
         if (response.ok) {
           this.anunciarVoz("Bienvenido, " + persona.nombre + ". Entrada registrada.");
-          alert(`✅ Entrada registrada exitosamente vía QR para: ${persona.nombre} a las ${horaMarcada}`);
+          alert(`✅ Entrada registrada exitosamente para: ${persona.nombre} a las ${horaMarcada}`);
           await this.cargarDatosAsistencia();
         } else {
           const errText = await response.text();
@@ -187,7 +187,7 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
 
         if (response.ok) {
           this.anunciarVoz("Hasta luego, " + persona.nombre + ". Salida registrada.");
-          alert(`✅ Salida registrada exitosamente vía QR para: ${persona.nombre} a las ${horaMarcada}`);
+          alert(`✅ Salida registrada exitosamente para: ${persona.nombre} a las ${horaMarcada}`);
           await this.cargarDatosAsistencia();
         } else {
           const errText = await response.text();
@@ -198,7 +198,7 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
         alert("Esta persona ya ha completado su jornada de hoy (entrada y salida registradas).");
       }
     } catch (error) {
-      console.error("Error al registrar asistencia QR:", error);
+      console.error("Error al registrar asistencia:", error);
       alert("No se pudo conectar con el servidor para registrar asistencia.");
     }
   }
@@ -268,13 +268,13 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
   }
 
   imprimirCarnet(persona: PersonalAsistencia) {
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(persona.cedula)}`;
     const fecha = new Date().getFullYear();
 
     const carnetHtml = `
       <html>
       <head>
         <title>Carnet de Identificación - ${persona.nombre}</title>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
           body {
@@ -338,23 +338,10 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
             background: white;
             z-index: 1;
           }
-          .qr-container {
-            background: white;
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            margin-top: -30px;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 20px;
-          }
-          .qr-code {
-            width: 140px;
-            height: 140px;
-            display: block;
-          }
           .info {
             text-align: center;
             width: 100%;
+            margin-top: -20px;
           }
           .name {
             font-size: 20px;
@@ -386,7 +373,20 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
             font-size: 16px;
             font-weight: 600;
             color: #334155;
-            margin: 0;
+            margin: 0 0 12px;
+          }
+          .barcode-container {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            margin-top: 8px;
+            display: flex;
+            justify-content: center;
+          }
+          .barcode-container svg {
+            display: block;
           }
           .footer {
             background: #f8fafc;
@@ -418,14 +418,14 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
             <div class="year">Período ${fecha}</div>
           </div>
           <div class="content">
-            <div class="qr-container">
-              <img src="${qrUrl}" alt="Código QR" class="qr-code" />
-            </div>
             <div class="info">
               <h2 class="name">${persona.nombre}</h2>
               <div class="role">${persona.cargo}</div>
               <div class="cedula-label">Cédula de Identidad</div>
               <p class="cedula">${persona.cedula}</p>
+            </div>
+            <div class="barcode-container">
+              <svg id="barcode"></svg>
             </div>
           </div>
           <div class="footer">
@@ -434,14 +434,26 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
         </div>
         <script>
           window.onload = () => {
+            JsBarcode("#barcode", "${persona.cedula}", {
+              format: "CODE128",
+              width: 2,
+              height: 60,
+              displayValue: true,
+              fontSize: 14,
+              font: "Inter",
+              fontOptions: "bold",
+              textMargin: 6,
+              margin: 0,
+              background: "transparent"
+            });
             setTimeout(() => {
               window.print();
               setTimeout(() => {
                 window.close();
               }, 500);
-            }, 500); // Give time for QR image to load
+            }, 300);
           };
-        </script>
+        <\/script>
       </body>
       </html>
     `;
