@@ -19,6 +19,14 @@ export class InscripcionComponent implements OnInit {
   private debounceTimer: any = null;
   matriculas: any[] = [];
 
+  // Autocompletados
+  alumnosList: any[] = [];
+  alumnosFiltrados: any[] = [];
+  mostrarDropdownAlumnos: boolean = false;
+
+  representantesFiltrados: any[] = [];
+  mostrarDropdownRepresentantes: boolean = false;
+
   alumno: any = {
     id: null,
     cedulaAlumno: '',
@@ -61,6 +69,7 @@ export class InscripcionComponent implements OnInit {
     this.procesarEdadYAsignarSala();
     this.cargarMatriculas();
     this.cargarRepresentantes();
+    this.cargarAlumnos();
   }
 
   async cargarRepresentantes() {
@@ -78,6 +87,24 @@ export class InscripcionComponent implements OnInit {
       }
     } catch (error) {
       console.error("Error al cargar representantes:", error);
+    }
+  }
+
+  async cargarAlumnos() {
+    const token = localStorage.getItem("jba_token");
+    try {
+      const response = await fetch("http://localhost:5188/api/alumnos", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        this.alumnosList = await response.json();
+        this.cdr.detectChanges();
+      }
+    } catch (error) {
+      console.error("Error al cargar alumnos:", error);
     }
   }
 
@@ -264,6 +291,165 @@ export class InscripcionComponent implements OnInit {
       }
     }
     this.pestanaActual += direccion;
+  }
+
+  filtrarAlumnosRegulares() {
+    this.mostrarDropdownAlumnos = true;
+    if (!this.terminoBusqueda) {
+      this.alumnosFiltrados = [];
+      return;
+    }
+    const query = this.terminoBusqueda.toLowerCase().trim();
+    this.alumnosFiltrados = this.alumnosList.filter(a => 
+      a.nombre_alumno.toLowerCase().includes(query) || 
+      a.ci_alumno.includes(query)
+    ).slice(0, 10);
+  }
+
+  async seleccionarAlumnoRegular(alumnoEncontrado: any) {
+    this.mostrarDropdownAlumnos = false;
+    this.terminoBusqueda = `${alumnoEncontrado.nombre_alumno} (${alumnoEncontrado.ci_alumno})`;
+    const token = localStorage.getItem("jba_token");
+
+    try {
+      const repEncontrado = this.representantesList.find(r => r.ci_representante === alumnoEncontrado.ci_representante);
+
+      let repTelefono = "";
+      let telMadre = "";
+      let telPadre = "";
+      if (repEncontrado && repEncontrado.motivo_r) {
+        try {
+          const contacto = JSON.parse(repEncontrado.motivo_r);
+          repTelefono = contacto.repTelefono || "";
+          telMadre = contacto.telMadre || "";
+          telPadre = contacto.telPadre || "";
+        } catch (e) {
+          // No era JSON
+        }
+      }
+
+      const inscResp = await fetch("http://localhost:5188/api/inscripciones", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      let sala = "";
+      let seccion = "";
+      let ultimoAnoInscripcion = new Date().getFullYear() - 1;
+      if (inscResp.ok) {
+        const inscripciones: any[] = await inscResp.json();
+        const studentInscs = inscripciones.filter(i => i.ci_alumno === alumnoEncontrado.ci_alumno);
+        let insc = null;
+        if (studentInscs.length > 0) {
+          studentInscs.sort((a: any, b: any) => b.id_inscripcion - a.id_inscripcion);
+          insc = studentInscs[0];
+        }
+        if (insc) {
+          const mat = this.matriculas.find(m => m.id_aula === insc.id_aula);
+          if (mat) {
+            sala = mat.aula;
+            seccion = mat.seccion;
+          }
+          if (insc.fecha_inscripcion) {
+            ultimoAnoInscripcion = new Date(insc.fecha_inscripcion).getFullYear();
+          }
+        }
+      }
+
+      const siguienteAno = ultimoAnoInscripcion + 1;
+      const nuevaEdad = (alumnoEncontrado.edad_alumno || 3) + 1;
+      let fakeFechaNac = "";
+      const fakeDate = new Date();
+      fakeDate.setFullYear(fakeDate.getFullYear() - nuevaEdad);
+      fakeFechaNac = fakeDate.toISOString().substring(0, 10);
+
+      const ciAlumno = alumnoEncontrado.ci_alumno || '';
+      const ciRep = alumnoEncontrado.ci_representante ? alumnoEncontrado.ci_representante.replace(/\D/g, '') : '';
+      let prefijo = '1';
+      if (ciAlumno && ciRep) {
+        const suffixIndex = ciAlumno.indexOf(ciRep);
+        if (suffixIndex > 2) {
+          prefijo = ciAlumno.substring(0, suffixIndex - 2);
+        }
+      }
+
+      this.alumno = {
+        id: alumnoEncontrado.ci_alumno,
+        cedulaAlumno: alumnoEncontrado.ci_alumno,
+        prefijoCedula: prefijo,
+        nombre: alumnoEncontrado.nombre_alumno,
+        sexo: alumnoEncontrado.sexo,
+        fechaNac: fakeFechaNac,
+        edad: nuevaEdad,
+        sala: sala,
+        seccion: seccion,
+        representante: repEncontrado ? repEncontrado.nombre_representante : "",
+        cedula: alumnoEncontrado.ci_representante,
+        repTelefono: repTelefono,
+        historialMedico: alumnoEncontrado.cardiovascular || 'Sano',
+        ciMadre: repEncontrado ? repEncontrado.ci_madre : "",
+        nombreMadre: repEncontrado ? repEncontrado.nombre_madre : "",
+        telMadre: telMadre,
+        ciPadre: repEncontrado ? repEncontrado.ci_padre : "",
+        nombrePadre: repEncontrado ? repEncontrado.nombre_padre : "",
+        telPadre: telPadre,
+        anoEntrada: siguienteAno,
+        motivo: alumnoEncontrado.motivo_a
+      };
+
+      this.alumnoEncontradoID = 1;
+      this.procesarEdadYAsignarSala();
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error("Error al seleccionar alumno regular:", error);
+    }
+  }
+
+  filtrarRepresentantes() {
+    this.mostrarDropdownRepresentantes = true;
+    const val = this.alumno.cedula ? this.alumno.cedula.trim() : "";
+    if (!val) {
+      this.representantesFiltrados = [];
+      return;
+    }
+    const query = val.toLowerCase();
+    this.representantesFiltrados = this.representantesList.filter(r => 
+      r.ci_representante.includes(query) || 
+      r.nombre_representante.toLowerCase().includes(query)
+    ).slice(0, 10);
+  }
+
+  seleccionarRepresentante(rep: any) {
+    this.alumno.cedula = rep.ci_representante;
+    this.alumno.representante = rep.nombre_representante || "";
+    
+    let telRep = "";
+    let telMad = "";
+    let telPad = "";
+    if (rep.motivo_r) {
+      try {
+        const contacto = JSON.parse(rep.motivo_r);
+        telRep = contacto.repTelefono || "";
+        telMad = contacto.telMadre || "";
+        telPad = contacto.telPadre || "";
+      } catch (e) {
+        // No era JSON
+      }
+    }
+    
+    this.alumno.repTelefono = telRep;
+    this.alumno.ciMadre = rep.ci_madre || "";
+    this.alumno.nombreMadre = rep.nombre_madre || "";
+    this.alumno.telMadre = telMad;
+    this.alumno.ciPadre = rep.ci_padre || "";
+    this.alumno.nombrePadre = rep.nombre_padre || "";
+    this.alumno.telPadre = telPad;
+
+    this.representanteAutoRellenado = true;
+    this.mostrarDropdownRepresentantes = false;
+    this.calcularCedulaEscolar();
+    this.cdr.detectChanges();
   }
 
   async buscarAlumnoRegular() {

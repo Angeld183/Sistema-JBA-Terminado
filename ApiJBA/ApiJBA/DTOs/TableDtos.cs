@@ -70,12 +70,10 @@ namespace ApiJBA.DTOs
     // 4. Colaboracion
     public class ColaboracionCreacionDto
     {
-        [Required]
-        public int id_proveedor { get; set; }
+        public int? id_proveedor { get; set; }
 
-        [Required]
         [StringLength(20)]
-        public string ci_representante { get; set; } = default!;
+        public string? ci_representante { get; set; }
 
         [Required]
         [StringLength(16)]

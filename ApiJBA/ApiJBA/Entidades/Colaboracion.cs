@@ -12,13 +12,11 @@ namespace ApiJBA.Entidades
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int id_orden { get; set; }
 
-        [Required]
-        public int id_proveedor { get; set; }
+        public int? id_proveedor { get; set; }
 
-        [Required]
         [Column(TypeName = "varchar(20)")]
         [StringLength(20)]
-        public string ci_representante { get; set; } = default!;
+        public string? ci_representante { get; set; }
 
         [Required]
         [Column(TypeName = "varchar(16)")]
@@ -34,10 +32,10 @@ namespace ApiJBA.Entidades
 
         // Propiedades de navegación
         [ForeignKey("id_proveedor")]
-        public Proveedor Proveedor { get; set; } = default!;
+        public Proveedor? Proveedor { get; set; }
 
         [ForeignKey("ci_representante")]
-        public Representante Representante { get; set; } = default!;
+        public Representante? Representante { get; set; }
 
         [ForeignKey("ci_p")]
         public Personal Personal { get; set; } = default!;

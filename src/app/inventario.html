@@ -27,6 +27,9 @@
             <button (click)="abrirModalCategorias()" class="btn btn-purple">
                 <i class="fas fa-tags"></i> Categorías
             </button>
+            <button (click)="abrirModalProveedores()" class="btn btn-primary" style="background-color: #3b82f6;">
+                <i class="fas fa-truck"></i> Proveedores
+            </button>
             <button (click)="exportarInventarioExcel()" class="btn btn-excel">
                 <i class="fas fa-file-excel"></i> Reporte Excel
             </button>
@@ -127,15 +130,22 @@
 
     <!-- MODAL 1: REGISTRAR / INGRESAR MATERIAL -->
     <div class="modal-overlay animate-fade-in" *ngIf="modalIngresoAbierto">
-        <div class="modal-box">
+        <div class="modal-box" style="max-width: 600px;">
             <div class="modal-header">
                 <h3>📦 Registrar Material / Producto</h3>
                 <button (click)="cerrarModales()" class="modal-close-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
+                <div class="form-group autocomplete-container">
                     <label>Código Corto *</label>
-                    <input type="text" [(ngModel)]="codigoIngreso" placeholder="Ej: LAP-01, JUG-25" class="form-control" style="text-transform: uppercase;">
+                    <input type="text" [(ngModel)]="codigoIngreso" (input)="filtrarProductosIngreso()" (focus)="mostrarDropdownProductosIngreso = true" placeholder="Ej: LAP-01, JUG-25" class="form-control" style="text-transform: uppercase;">
+                    
+                    <div class="autocomplete-dropdown" *ngIf="mostrarDropdownProductosIngreso && productosFiltradosIngreso.length > 0">
+                        <div class="dropdown-item" *ngFor="let p of productosFiltradosIngreso" (click)="seleccionarProductoIngreso(p)">
+                            <strong>{{ p.descripcion }}</strong>
+                            <span class="badge-tipo badge-proveedor">{{ p.codigo_corto }}</span>
+                        </div>
+                    </div>
                     <small class="form-help">Si el código ya existe, se incrementará la cantidad en la sala seleccionada.</small>
                 </div>
                 <div class="form-group">
@@ -160,6 +170,62 @@
                         </option>
                     </select>
                 </div>
+
+                <!-- Botón para agregar a la lista -->
+                <button type="button" (click)="agregarElementoIngreso()" class="btn btn-secondary w-full" style="margin-bottom: 20px; background-color: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1;">
+                    <i class="fas fa-plus"></i> Agregar Insumo a la Lista
+                </button>
+
+                <!-- Tabla de elementos agregados -->
+                <div *ngIf="elementosIngreso.length > 0" style="margin-bottom: 20px;">
+                    <label style="font-weight: 700; display: block; margin-bottom: 8px;">Lista de Materiales a Registrar ({{ elementosIngreso.length }}):</label>
+                    <div style="max-height: 150px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #f8fafc;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                            <thead>
+                                <tr style="background-color: #f1f5f9; text-align: left; border-bottom: 1px solid #e2e8f0;">
+                                    <th style="padding: 8px 12px;">Código</th>
+                                    <th style="padding: 8px 12px;">Descripción</th>
+                                    <th style="padding: 8px 12px; text-align: center;">Cant.</th>
+                                    <th style="padding: 8px 12px; text-align: center;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let item of elementosIngreso; let idx = index" style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 8px 12px; font-weight: 600;">{{ item.codigo }}</td>
+                                    <td style="padding: 8px 12px;">{{ item.nombre }}</td>
+                                    <td style="padding: 8px 12px; text-align: center; font-weight: bold;">{{ item.cantidad }}</td>
+                                    <td style="padding: 8px 12px; text-align: center;">
+                                        <button type="button" (click)="eliminarElementoIngreso(idx)" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 1rem;">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="form-group autocomplete-container">
+                    <label>Proveedor o Colaborador que entrega (Opcional)</label>
+                    <input type="text" [(ngModel)]="searchPersonaTerm" (input)="filtrarPersonas()" placeholder="Escriba nombre o cédula/RIF..." class="form-control" (focus)="mostrarDropdownPersonas = true">
+                    
+                    <div class="autocomplete-dropdown" *ngIf="mostrarDropdownPersonas && personasFiltradas.length > 0">
+                        <div class="dropdown-item" *ngFor="let p of personasFiltradas" (click)="seleccionarPersona(p)">
+                            <strong>{{ p.nombre }}</strong>
+                            <span class="badge-tipo" [ngClass]="p.tipo === 'proveedor' ? 'badge-proveedor' : 'badge-colaborador'">
+                                {{ p.tipo === 'proveedor' ? 'Proveedor' : 'Colaborador' }}
+                            </span>
+                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">
+                                ID/Cédula: {{ p.identificacion }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="selected-persona-box" *ngIf="personaSeleccionada">
+                        <span>Asociado a: <strong>{{ personaSeleccionada.nombre }}</strong> ({{ personaSeleccionada.tipo === 'proveedor' ? 'Proveedor' : 'Colaborador' }})</span>
+                        <button type="button" class="btn-clear" (click)="deseleccionarPersona()">&times;</button>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label>Sala de Destino *</label>
                     <select [(ngModel)]="depositoIngresoId" class="form-control">
@@ -178,15 +244,22 @@
 
     <!-- MODAL 2: TRASLADAR MATERIAL -->
     <div class="modal-overlay animate-fade-in" *ngIf="modalTrasladoAbierto">
-        <div class="modal-box">
+        <div class="modal-box" style="max-width: 600px;">
             <div class="modal-header">
                 <h3>⇄ Trasladar Insumo / Material</h3>
                 <button (click)="cerrarModales()" class="modal-close-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
+                <div class="form-group autocomplete-container">
                     <label>Código del Material a Trasladar *</label>
-                    <input type="text" [(ngModel)]="codigoTraslado" placeholder="Ej: LAP-01" class="form-control" style="text-transform: uppercase;">
+                    <input type="text" [(ngModel)]="codigoTraslado" (input)="filtrarProductosTraslado()" (focus)="mostrarDropdownProductosTraslado = true" placeholder="Ej: LAP-01" class="form-control" style="text-transform: uppercase;">
+                    
+                    <div class="autocomplete-dropdown" *ngIf="mostrarDropdownProductosTraslado && productosFiltradosTraslado.length > 0">
+                        <div class="dropdown-item" *ngFor="let p of productosFiltradosTraslado" (click)="seleccionarProductoTraslado(p)">
+                            <strong>{{ p.descripcion }}</strong>
+                            <span class="badge-tipo badge-proveedor">{{ p.codigo_corto }}</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Ubicación de Origen *</label>
@@ -208,6 +281,41 @@
                     <label>Cantidad a Trasladar *</label>
                     <input type="number" [(ngModel)]="cantidadTraslado" min="1" class="form-control">
                 </div>
+
+                <!-- Botón para agregar a la lista -->
+                <button type="button" (click)="agregarElementoTraslado()" class="btn btn-secondary w-full" style="margin-bottom: 20px; background-color: #f1f5f9; color: #1e293b; border: 1px solid #cbd5e1;">
+                    <i class="fas fa-plus"></i> Agregar Material a Trasladar
+                </button>
+
+                <!-- Tabla de elementos a trasladar -->
+                <div *ngIf="elementosTraslado.length > 0" style="margin-bottom: 20px;">
+                    <label style="font-weight: 700; display: block; margin-bottom: 8px;">Lista de Materiales a Trasladar ({{ elementosTraslado.length }}):</label>
+                    <div style="max-height: 150px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background-color: #f8fafc;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                            <thead>
+                                <tr style="background-color: #f1f5f9; text-align: left; border-bottom: 1px solid #e2e8f0;">
+                                    <th style="padding: 8px 12px;">Código</th>
+                                    <th style="padding: 8px 12px;">Descripción</th>
+                                    <th style="padding: 8px 12px; text-align: center;">Cant.</th>
+                                    <th style="padding: 8px 12px; text-align: center;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let item of elementosTraslado; let idx = index" style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 8px 12px; font-weight: 600;">{{ item.codigo }}</td>
+                                    <td style="padding: 8px 12px;">{{ item.nombre }}</td>
+                                    <td style="padding: 8px 12px; text-align: center; font-weight: bold;">{{ item.cantidad }}</td>
+                                    <td style="padding: 8px 12px; text-align: center;">
+                                        <button type="button" (click)="eliminarElementoTraslado(idx)" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 1rem;">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label>Motivo del Traslado</label>
                     <input type="text" [(ngModel)]="motivoTraslado" placeholder="Ej: Abastecimiento de aula por inicio de actividades" class="form-control">
@@ -274,6 +382,52 @@
             <div class="modal-footer">
                 <button (click)="guardarEdicionStock()" class="btn btn-primary w-full">Guardar Cambios</button>
                 <button (click)="cerrarModales()" class="btn btn-outline w-full">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: GESTIÓN DE PROVEEDORES -->
+    <div class="modal-overlay animate-fade-in" *ngIf="modalProveedoresAbierto">
+        <div class="modal-box" style="max-width: 550px;">
+            <div class="modal-header">
+                <h3>🚚 Gestión de Proveedores</h3>
+                <button (click)="cerrarModales()" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulario de creación rápida -->
+                <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                    <h4 style="margin: 0 0 12px 0; color: #0f172a;">Registrar Nuevo Proveedor</h4>
+                    <div class="form-group">
+                        <label>Nombre del Proveedor *</label>
+                        <input type="text" [(ngModel)]="nuevoProveedorNombre" placeholder="Ej: Distribuidora Escolar C.A." class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Cédula/RIF/Número *</label>
+                        <input type="text" [(ngModel)]="nuevoProveedorNum" placeholder="Ej: J-12345678-9, V-12345678" class="form-control">
+                    </div>
+                    <button (click)="crearProveedor()" class="btn btn-primary w-full" style="margin-top: 8px;">
+                        <i class="fas fa-plus"></i> Guardar Proveedor
+                    </button>
+                </div>
+
+                <!-- Listado de proveedores -->
+                <div>
+                    <label style="font-weight: 700; display: block; margin-bottom: 8px;">Proveedores Registrados:</label>
+                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 12px;">
+                        <div *ngFor="let prov of todosLosProveedores" style="padding: 10px 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong style="color: #1e293b; display: block;">{{ prov.nombre_proveedor }}</strong>
+                                <span style="font-size: 0.8rem; color: #64748b;">RIF/Num: {{ prov.num_proveedor }}</span>
+                            </div>
+                        </div>
+                        <div *ngIf="todosLosProveedores.length === 0" style="padding: 20px; text-align: center; color: #94a3b8;">
+                            No hay proveedores registrados.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button (click)="cerrarModales()" class="btn btn-outline w-full">Cerrar</button>
             </div>
         </div>
     </div>

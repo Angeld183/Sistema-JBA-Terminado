@@ -44,6 +44,30 @@ export class InventarioComponent implements OnInit {
   productos: Producto[] = [];
   todosLosStocks: StockDeposito[] = [];
 
+  // Proveedores y representantes (Colaboradores)
+  todosLosProveedores: any[] = [];
+  todosLosRepresentantes: any[] = [];
+  personasDisponibles: any[] = []; // Lista unificada de búsqueda
+  personasFiltradas: any[] = [];
+  searchPersonaTerm: string = '';
+  personaSeleccionada: any | null = null;
+  mostrarDropdownPersonas: boolean = false;
+
+  // Variables para la creación de Proveedor
+  modalProveedoresAbierto: boolean = false;
+  nuevoProveedorNombre: string = '';
+  nuevoProveedorNum: string = '';
+
+  // Autocompletado de Productos
+  productosFiltradosIngreso: any[] = [];
+  mostrarDropdownProductosIngreso: boolean = false;
+  productosFiltradosTraslado: any[] = [];
+  mostrarDropdownProductosTraslado: boolean = false;
+
+  // Soporte Multiobjeto
+  elementosIngreso: any[] = [];
+  elementosTraslado: any[] = [];
+
   // Vista activa y navegación
   salaSeleccionada: Deposito | null = null;
   stocksFiltradosSala: StockDeposito[] = [];
@@ -112,11 +136,13 @@ export class InventarioComponent implements OnInit {
   async cargarDatos(): Promise<void> {
     try {
       const headers = this.getAuthHeaders();
-      const [depResp, catResp, prodResp, stockResp] = await Promise.all([
+      const [depResp, catResp, prodResp, stockResp, provResp, repResp] = await Promise.all([
         fetch("http://localhost:5188/api/depositos", { headers }),
         fetch("http://localhost:5188/api/categorias", { headers }),
         fetch("http://localhost:5188/api/productos", { headers }),
-        fetch("http://localhost:5188/api/stockdepositos", { headers })
+        fetch("http://localhost:5188/api/stockdepositos", { headers }),
+        fetch("http://localhost:5188/api/proveedores", { headers }).catch(e => null),
+        fetch("http://localhost:5188/api/representantes", { headers }).catch(e => null)
       ]);
 
       if (!depResp.ok || !catResp.ok || !prodResp.ok || !stockResp.ok) {
@@ -127,6 +153,14 @@ export class InventarioComponent implements OnInit {
       this.categorias = await catResp.json();
       this.productos = await prodResp.json();
       this.todosLosStocks = await stockResp.json();
+
+      if (provResp && provResp.ok) {
+        this.todosLosProveedores = await provResp.json();
+      }
+      if (repResp && repResp.ok) {
+        this.todosLosRepresentantes = await repResp.json();
+      }
+      this.construirListaPersonas();
 
       // Sincronizar listas activas si hay una sala seleccionada
       if (this.salaSeleccionada) {
@@ -153,6 +187,181 @@ export class InventarioComponent implements OnInit {
     this.stocksFiltradosSala = [];
     this.searchTerm = '';
     this.cdr.detectChanges();
+  }
+
+  construirListaPersonas(): void {
+    const providersMapped = this.todosLosProveedores.map(p => ({
+      tipo: 'proveedor',
+      id: p.id_proveedor,
+      nombre: p.nombre_proveedor,
+      identificacion: p.num_proveedor
+    }));
+    const repsMapped = this.todosLosRepresentantes.map(r => ({
+      tipo: 'colaborador',
+      id: r.ci_representante,
+      nombre: r.nombre_representante,
+      identificacion: r.ci_representante
+    }));
+    this.personasDisponibles = [...providersMapped, ...repsMapped];
+  }
+
+  filtrarPersonas(): void {
+    this.mostrarDropdownPersonas = true;
+    if (!this.searchPersonaTerm) {
+      this.personasFiltradas = [];
+      return;
+    }
+    const term = this.searchPersonaTerm.toLowerCase().trim();
+    this.personasFiltradas = this.personasDisponibles.filter(p => 
+      p.nombre.toLowerCase().includes(term) || 
+      p.identificacion.toLowerCase().includes(term)
+    ).slice(0, 10);
+  }
+
+  seleccionarPersona(persona: any): void {
+    this.personaSeleccionada = persona;
+    this.searchPersonaTerm = `${persona.nombre} (${persona.tipo === 'proveedor' ? 'Proveedor' : 'Colaborador'})`;
+    this.mostrarDropdownPersonas = false;
+  }
+
+  deseleccionarPersona(): void {
+    this.personaSeleccionada = null;
+    this.searchPersonaTerm = '';
+    this.personasFiltradas = [];
+  }
+
+  abrirModalProveedores(): void {
+    this.nuevoProveedorNombre = '';
+    this.nuevoProveedorNum = '';
+    this.modalProveedoresAbierto = true;
+  }
+
+  async crearProveedor(): Promise<void> {
+    if (!this.nuevoProveedorNombre.trim() || !this.nuevoProveedorNum.trim()) {
+      this.mostrarAlerta("Por favor, llene todos los campos para el proveedor.", "warning");
+      return;
+    }
+    try {
+      const headers = this.getAuthHeaders();
+      const resp = await fetch("http://localhost:5188/api/proveedores", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          nombre_proveedor: this.nuevoProveedorNombre.trim(),
+          num_proveedor: this.nuevoProveedorNum.trim()
+        })
+      });
+      if (!resp.ok) throw new Error("Error al crear el proveedor.");
+      this.mostrarAlerta("Proveedor creado exitosamente.", "success");
+      this.nuevoProveedorNombre = '';
+      this.nuevoProveedorNum = '';
+      this.modalProveedoresAbierto = false;
+      await this.cargarDatos();
+    } catch (err: any) {
+      console.error(err);
+      this.mostrarAlerta(err.message || "Error al registrar proveedor.", "danger");
+    }
+  }
+
+  filtrarProductosIngreso() {
+    this.mostrarDropdownProductosIngreso = true;
+    const term = this.codigoIngreso.toLowerCase().trim();
+    if (!term) {
+      this.productosFiltradosIngreso = [];
+      return;
+    }
+    this.productosFiltradosIngreso = this.productos.filter(p => 
+      p.codigo_corto.toLowerCase().includes(term) || 
+      p.descripcion.toLowerCase().includes(term)
+    ).slice(0, 10);
+  }
+
+  seleccionarProductoIngreso(p: any) {
+    this.codigoIngreso = p.codigo_corto;
+    this.nombreIngreso = p.descripcion;
+    this.categoriaIngresoId = p.id_categoria;
+    this.minimoIngreso = p.cant_min || 1;
+    this.mostrarDropdownProductosIngreso = false;
+  }
+
+  filtrarProductosTraslado() {
+    this.mostrarDropdownProductosTraslado = true;
+    const term = this.codigoTraslado.toLowerCase().trim();
+    if (!term) {
+      this.productosFiltradosTraslado = [];
+      return;
+    }
+    this.productosFiltradosTraslado = this.productos.filter(p => 
+      p.codigo_corto.toLowerCase().includes(term) || 
+      p.descripcion.toLowerCase().includes(term)
+    ).slice(0, 10);
+  }
+
+  seleccionarProductoTraslado(p: any) {
+    this.codigoTraslado = p.codigo_corto;
+    this.mostrarDropdownProductosTraslado = false;
+  }
+
+  agregarElementoIngreso() {
+    if (!this.codigoIngreso || !this.nombreIngreso || this.cantidadIngreso <= 0) {
+      this.mostrarAlerta("Llene los campos del producto con cantidades válidas.", "warning");
+      return;
+    }
+    const code = this.codigoIngreso.trim().toUpperCase();
+    const existing = this.elementosIngreso.find(e => e.codigo === code);
+    if (existing) {
+      existing.cantidad += this.cantidadIngreso;
+    } else {
+      const cat = this.categorias.find(c => c.id_categoria === this.categoriaIngresoId);
+      this.elementosIngreso.push({
+        codigo: code,
+        nombre: this.nombreIngreso.trim(),
+        cantidad: this.cantidadIngreso,
+        minimo: this.minimoIngreso,
+        id_categoria: this.categoriaIngresoId,
+        categoriaNombre: cat ? cat.nombre_categoria : 'General'
+      });
+    }
+    // Limpiar campos de producto
+    this.codigoIngreso = '';
+    this.nombreIngreso = '';
+    this.cantidadIngreso = 1;
+    this.minimoIngreso = 1;
+  }
+
+  eliminarElementoIngreso(index: number) {
+    this.elementosIngreso.splice(index, 1);
+  }
+
+  agregarElementoTraslado() {
+    if (!this.codigoTraslado || this.cantidadTraslado <= 0) {
+      this.mostrarAlerta("Ingrese un código de producto y una cantidad válida.", "warning");
+      return;
+    }
+    const code = this.codigoTraslado.trim().toUpperCase();
+    const prod = this.productos.find(p => p.codigo_corto === code);
+    if (!prod) {
+      this.mostrarAlerta(`El producto con código "${code}" no existe en el catálogo.`, "warning");
+      return;
+    }
+    const existing = this.elementosTraslado.find(e => e.codigo === code);
+    if (existing) {
+      existing.cantidad += this.cantidadTraslado;
+    } else {
+      this.elementosTraslado.push({
+        id_producto: prod.id_producto,
+        codigo: code,
+        nombre: prod.descripcion,
+        cantidad: this.cantidadTraslado
+      });
+    }
+    // Limpiar campos
+    this.codigoTraslado = '';
+    this.cantidadTraslado = 1;
+  }
+
+  eliminarElementoTraslado(index: number) {
+    this.elementosTraslado.splice(index, 1);
   }
 
   filtrarStockSala(): void {
@@ -191,6 +400,7 @@ export class InventarioComponent implements OnInit {
     this.codigoIngreso = '';
     this.cantidadIngreso = 1;
     this.minimoIngreso = 1;
+    this.deseleccionarPersona();
     // Seleccionar por defecto la sala actual si se está dentro de una
     this.depositoIngresoId = this.salaSeleccionada ? this.salaSeleccionada.id_deposito : (this.depositos[0]?.id_deposito || null);
     
@@ -231,84 +441,175 @@ export class InventarioComponent implements OnInit {
     this.modalTrasladoAbierto = false;
     this.modalCategoriasAbierto = false;
     this.modalEdicionAbierto = false;
+    this.modalProveedoresAbierto = false;
     this.stockEdicionSeleccionado = null;
+    this.deseleccionarPersona();
+    this.elementosIngreso = [];
+    this.elementosTraslado = [];
+    this.productosFiltradosIngreso = [];
+    this.mostrarDropdownProductosIngreso = false;
+    this.productosFiltradosTraslado = [];
+    this.mostrarDropdownProductosTraslado = false;
   }
 
   // Registrar / Ingresar Producto
   async ingresarMaterial(): Promise<void> {
-    if (!this.codigoIngreso || !this.nombreIngreso || !this.depositoIngresoId || !this.categoriaIngresoId) {
-      this.mostrarAlerta("Por favor, rellene todos los campos requeridos.", "warning");
+    if (!this.depositoIngresoId || !this.categoriaIngresoId) {
+      this.mostrarAlerta("Por favor, seleccione la sala y categoría de destino.", "warning");
       return;
     }
 
-    if (this.cantidadIngreso <= 0 || this.minimoIngreso < 0) {
-      this.mostrarAlerta("Verifique las cantidades ingresadas.", "warning");
-      return;
+    // Fallback: si la lista temporal de elementos está vacía, intentar agregar los campos actuales
+    if (this.elementosIngreso.length === 0) {
+      if (this.codigoIngreso && this.nombreIngreso && this.cantidadIngreso > 0) {
+        const codeUpper = this.codigoIngreso.trim().toUpperCase();
+        const cat = this.categorias.find(c => c.id_categoria === this.categoriaIngresoId);
+        this.elementosIngreso.push({
+          codigo: codeUpper,
+          nombre: this.nombreIngreso.trim(),
+          cantidad: this.cantidadIngreso,
+          minimo: this.minimoIngreso,
+          id_categoria: this.categoriaIngresoId,
+          categoriaNombre: cat ? cat.nombre_categoria : 'General'
+        });
+      } else {
+        this.mostrarAlerta("Debe agregar al menos un material a la lista.", "warning");
+        return;
+      }
     }
 
     try {
       const headers = this.getAuthHeaders();
-      const codeUpper = this.codigoIngreso.trim().toUpperCase();
+      const resolvedItems: any[] = [];
 
-      // 1. Buscar si el producto ya existe en el catálogo
-      let prodId: number | null = null;
-      const prodResp = await fetch(`http://localhost:5188/api/productos/buscar/${codeUpper}`, { headers });
-      
-      if (prodResp.ok) {
-        const prod = await prodResp.json();
-        prodId = prod.id_producto;
-      } else {
-        // No existe el producto, se debe crear en la base de datos
-        const newProdResp = await fetch("http://localhost:5188/api/productos", {
+      // 1. Resolver todos los productos (buscar o crear en catálogo)
+      for (const item of this.elementosIngreso) {
+        let prodId: number | null = null;
+        const prodResp = await fetch(`http://localhost:5188/api/productos/buscar/${item.codigo}`, { headers });
+        
+        if (prodResp.ok) {
+          const prod = await prodResp.json();
+          prodId = prod.id_producto;
+        } else {
+          const newProdResp = await fetch("http://localhost:5188/api/productos", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              id_categoria: item.id_categoria,
+              codigo_corto: item.codigo,
+              descripcion: item.nombre,
+              cant_min: item.minimo
+            })
+          });
+
+          if (!newProdResp.ok) {
+            throw new Error(`No se pudo crear el producto ${item.codigo} en el catálogo.`);
+          }
+
+          const createdProd = await newProdResp.json();
+          prodId = createdProd.id_producto;
+        }
+
+        if (!prodId) throw new Error(`ID inválido para el producto ${item.codigo}.`);
+        resolvedItems.push({
+          ...item,
+          id_producto: prodId
+        });
+      }
+
+      // 2. Si se seleccionó un colaborador o proveedor, registrar en Colaboracion y Recepcion
+      if (this.personaSeleccionada) {
+        try {
+          const userJson = localStorage.getItem("jba_user");
+          let ci_p = "SYSTEM";
+          if (userJson) {
+            const user = JSON.parse(userJson);
+            ci_p = user.ci_p || "SYSTEM";
+          }
+
+          const colabPayload = {
+            id_proveedor: this.personaSeleccionada.tipo === 'proveedor' ? this.personaSeleccionada.id : null,
+            ci_representante: this.personaSeleccionada.tipo === 'colaborador' ? this.personaSeleccionada.id : null,
+            ci_p: ci_p,
+            fecha_registro: new Date().toISOString(),
+            observacion: `Recepción de ${resolvedItems.length} materiales en inventario`
+          };
+
+          const colabResp = await fetch("http://localhost:5188/api/colaboraciones", {
+            method: "POST",
+            headers,
+            body: JSON.stringify(colabPayload)
+          });
+
+          if (colabResp.ok) {
+            const colab = await colabResp.json();
+            const id_orden = colab.id_orden;
+
+            const recpResp = await fetch("http://localhost:5188/api/recepciones", {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                id_orden: id_orden,
+                ci_p: ci_p,
+                fecha_registro: new Date().toISOString()
+              })
+            });
+
+            if (recpResp.ok) {
+              const recp = await recpResp.json();
+              const id_recepcion = recp.id_recepcion;
+
+              for (const rit of resolvedItems) {
+                await fetch("http://localhost:5188/api/detallerecepciones", {
+                  method: "POST",
+                  headers,
+                  body: JSON.stringify({
+                    id_recepcion: id_recepcion,
+                    id_producto: rit.id_producto,
+                    cantidad_re: rit.cantidad,
+                    fecha_vencimiento: null
+                  })
+                });
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Error al registrar auditoria de ingreso:", e);
+        }
+      }
+
+      // 3. Registrar los stocks en el depósito
+      for (const rit of resolvedItems) {
+        const stockResp = await fetch("http://localhost:5188/api/stockdepositos", {
           method: "POST",
           headers,
           body: JSON.stringify({
-            id_categoria: this.categoriaIngresoId,
-            codigo_corto: codeUpper,
-            descripcion: this.nombreIngreso.trim(),
-            cant_min: this.minimoIngreso
+            id_deposito: this.depositoIngresoId,
+            id_producto: rit.id_producto,
+            cantidad: rit.cantidad,
+            cantidad_min: rit.minimo
           })
         });
 
-        if (!newProdResp.ok) {
-          throw new Error("No se pudo crear el producto en el catálogo.");
+        if (!stockResp.ok) {
+          throw new Error(`No se pudo asociar el stock de ${rit.codigo} al depósito.`);
         }
-
-        const createdProd = await newProdResp.json();
-        prodId = createdProd.id_producto;
       }
 
-      if (!prodId) throw new Error("ID de producto inválido.");
-
-      // 2. Registrar el stock en el depósito
-      const stockResp = await fetch("http://localhost:5188/api/stockdepositos", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          id_deposito: this.depositoIngresoId,
-          id_producto: prodId,
-          cantidad: this.cantidadIngreso,
-          cantidad_min: this.minimoIngreso
-        })
-      });
-
-      if (!stockResp.ok) {
-        throw new Error("No se pudo asociar el stock al depósito.");
-      }
-
-      this.mostrarAlerta("Material ingresado correctamente.", "success");
+      this.mostrarAlerta("Materiales ingresados correctamente.", "success");
+      this.elementosIngreso = [];
       this.cerrarModales();
       await this.cargarDatos();
     } catch (err: any) {
       console.error(err);
-      this.mostrarAlerta(err.message || "Error al registrar el producto.", "danger");
+      this.mostrarAlerta(err.message || "Error al registrar los productos.", "danger");
     }
   }
 
   // Trasladar Material
   async trasladarMaterial(): Promise<void> {
-    if (!this.codigoTraslado || !this.origenTrasladoId || !this.destinoTrasladoId) {
-      this.mostrarAlerta("Rellene los campos obligatorios para el traslado.", "warning");
+    if (!this.origenTrasladoId || !this.destinoTrasladoId) {
+      this.mostrarAlerta("Seleccione el depósito de origen y de destino.", "warning");
       return;
     }
 
@@ -317,25 +618,29 @@ export class InventarioComponent implements OnInit {
       return;
     }
 
-    if (this.cantidadTraslado <= 0) {
-      this.mostrarAlerta("Ingrese una cantidad de traslado válida.", "warning");
-      return;
+    // Fallback: si la lista temporal de elementos está vacía, intentar agregar los campos actuales
+    if (this.elementosTraslado.length === 0) {
+      if (this.codigoTraslado && this.cantidadTraslado > 0) {
+        const codeUpper = this.codigoTraslado.trim().toUpperCase();
+        const prod = this.productos.find(p => p.codigo_corto === codeUpper);
+        if (!prod) {
+          this.mostrarAlerta(`El producto con código "${codeUpper}" no existe en el catálogo.`, "warning");
+          return;
+        }
+        this.elementosTraslado.push({
+          id_producto: prod.id_producto,
+          codigo: codeUpper,
+          nombre: prod.descripcion,
+          cantidad: this.cantidadTraslado
+        });
+      } else {
+        this.mostrarAlerta("Debe agregar al menos un material a la lista de traslado.", "warning");
+        return;
+      }
     }
 
     try {
       const headers = this.getAuthHeaders();
-      const codeUpper = this.codigoTraslado.trim().toUpperCase();
-
-      // 1. Validar la existencia del producto por su código
-      const prodResp = await fetch(`http://localhost:5188/api/productos/buscar/${codeUpper}`, { headers });
-      if (!prodResp.ok) {
-        this.mostrarAlerta(`El producto con código ${codeUpper} no existe en el catálogo.`, "danger");
-        return;
-      }
-
-      const prod = await prodResp.json();
-
-      // Obtener cédula del personal para la auditoría de traslados
       const userJson = localStorage.getItem("jba_user");
       let ci_p = "SYSTEM";
       if (userJson) {
@@ -343,32 +648,35 @@ export class InventarioComponent implements OnInit {
         ci_p = user.ci_p || "SYSTEM";
       }
 
-      // 2. Enviar el registro de traslado al backend
-      const transResp = await fetch("http://localhost:5188/api/traslados", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          id_dep_origen: this.origenTrasladoId,
-          id_dep_destino: this.destinoTrasladoId,
-          id_producto: prod.id_producto,
-          cantidad_tr: this.cantidadTraslado,
-          ci_p: ci_p,
-          fecha_tr: new Date().toISOString(),
-          motivo: this.motivoTraslado.trim() || 'Traslado regular de inventario'
-        })
-      });
+      // Procesar cada traslado de forma iterativa
+      for (const item of this.elementosTraslado) {
+        const transResp = await fetch("http://localhost:5188/api/traslados", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            id_dep_origen: this.origenTrasladoId,
+            id_dep_destino: this.destinoTrasladoId,
+            id_producto: item.id_producto,
+            cantidad_tr: item.cantidad,
+            ci_p: ci_p,
+            fecha_tr: new Date().toISOString(),
+            motivo: this.motivoTraslado.trim() || 'Traslado regular de inventario'
+          })
+        });
 
-      if (!transResp.ok) {
-        const errorText = await transResp.text();
-        throw new Error(errorText || "Error en el servidor al realizar el traslado.");
+        if (!transResp.ok) {
+          const errorText = await transResp.text();
+          throw new Error(`Error en el traslado de ${item.codigo}: ${errorText || 'Error desconocido'}`);
+        }
       }
 
-      this.mostrarAlerta("Traslado procesado exitosamente.", "success");
+      this.mostrarAlerta("Todos los traslados fueron procesados exitosamente.", "success");
+      this.elementosTraslado = [];
       this.cerrarModales();
       await this.cargarDatos();
     } catch (err: any) {
       console.error(err);
-      this.mostrarAlerta(err.message || "Error al procesar el traslado.", "danger");
+      this.mostrarAlerta(err.message || "Error al procesar los traslados.", "danger");
     }
   }
 

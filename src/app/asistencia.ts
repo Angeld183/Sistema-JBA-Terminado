@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 interface PersonalAsistencia {
   id: number;
@@ -14,7 +15,7 @@ interface PersonalAsistencia {
 @Component({
   selector: 'app-asistencia',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './asistencia.html',
   styleUrl: './asistencia.css'
 })
@@ -26,6 +27,11 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
   // Lista cargada dinámicamente
   personalList: PersonalAsistencia[] = [];
   asistenciasDia: any[] = [];
+
+  // Modal de exportación por corte
+  modalExportarAbierto: boolean = false;
+  fechaCorteDesde: string = '';
+  fechaCorteHasta: string = '';
 
   constructor(private cdr: ChangeDetectorRef) {}
 
@@ -99,6 +105,7 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
         };
       });
       this.cdr.detectChanges();
+      this.generarCodigosDeBarraLocal();
     } catch (e) {
       console.error("Error al cargar asistencias:", e);
     }
@@ -203,6 +210,7 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Exportar asistencia del día actual (mantener funcionalidad original)
   exportarAsistenciaExcel() {
     if (this.personalList.length === 0) {
       alert("No hay registros para exportar.");
@@ -212,7 +220,6 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
     const title = "Reporte de Asistencia Diaria - JBA";
     const headers = ["NOMBRE", "CÉDULA", "ENTRADA", "SALIDA", "ESTADO"];
     
-    // Armar filas
     const rows = this.personalList.map(p => [
       p.nombre,
       p.cedula,
@@ -221,7 +228,6 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
       p.estado === 'finalizado' ? 'COMPLETADO' : (p.estado === 'activo' ? 'TRABAJANDO' : 'AUSENTE')
     ]);
 
-    // Generar formato HTML de tabla para abrir en Excel
     let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">`;
     html += `<head><meta charset="utf-8">`;
     html += `<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Asistencias</x:Name>`;
@@ -267,6 +273,171 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
     window.URL.revokeObjectURL(url);
   }
 
+  // ==========================================
+  // EXPORTACIÓN POR CORTE (RANGO DE FECHAS)
+  // ==========================================
+
+  abrirModalExportar() {
+    const hoy = new Date();
+    const hace30 = new Date();
+    hace30.setDate(hoy.getDate() - 30);
+    this.fechaCorteDesde = hace30.toISOString().substring(0, 10);
+    this.fechaCorteHasta = hoy.toISOString().substring(0, 10);
+    this.modalExportarAbierto = true;
+  }
+
+  cerrarModalExportar() {
+    this.modalExportarAbierto = false;
+  }
+
+  async exportarPorCorte() {
+    if (!this.fechaCorteDesde || !this.fechaCorteHasta) {
+      alert("Debe seleccionar ambas fechas de corte.");
+      return;
+    }
+
+    const desde = new Date(this.fechaCorteDesde + 'T00:00:00');
+    const hasta = new Date(this.fechaCorteHasta + 'T23:59:59');
+
+    if (desde > hasta) {
+      alert("La fecha 'Desde' no puede ser posterior a la fecha 'Hasta'.");
+      return;
+    }
+
+    const token = localStorage.getItem("jba_token");
+    if (!token) {
+      alert("No has iniciado sesión.");
+      return;
+    }
+
+    try {
+      const [persResp, asisResp] = await Promise.all([
+        fetch("http://localhost:5188/api/personal", { headers: { "Authorization": `Bearer ${token}` } }),
+        fetch("http://localhost:5188/api/asistencias", { headers: { "Authorization": `Bearer ${token}` } })
+      ]);
+
+      if (!persResp.ok || !asisResp.ok) throw new Error("Error al obtener datos.");
+
+      const personal = await persResp.json();
+      const todasAsistencias = await asisResp.json();
+
+      // Filtrar asistencias dentro del rango de fechas
+      const asistenciasFiltradas = todasAsistencias.filter((a: any) => {
+        const entStr = a.entrada + (a.entrada.endsWith('Z') ? '' : 'Z');
+        const fecha = new Date(entStr);
+        return fecha >= desde && fecha <= hasta;
+      });
+
+      if (asistenciasFiltradas.length === 0) {
+        alert("No se encontraron registros de asistencia en el rango seleccionado.");
+        return;
+      }
+
+      // Construir lista de fechas únicas ordenadas
+      const fechasSet = new Set<string>();
+      asistenciasFiltradas.forEach((a: any) => {
+        const entStr = a.entrada + (a.entrada.endsWith('Z') ? '' : 'Z');
+        fechasSet.add(new Date(entStr).toLocaleDateString('es-VE'));
+      });
+      const fechasOrdenadas = Array.from(fechasSet).sort((a, b) => {
+        const da = a.split('/').reverse().join('-');
+        const db = b.split('/').reverse().join('-');
+        return da.localeCompare(db);
+      });
+
+      // Agrupar por personal activo
+      const activos = personal.filter((p: any) => p.estado === true);
+
+      // Generar HTML para Excel
+      const desdeFormatted = desde.toLocaleDateString('es-VE');
+      const hastaFormatted = hasta.toLocaleDateString('es-VE');
+      const title = `Reporte de Asistencia por Corte — Del ${desdeFormatted} al ${hastaFormatted}`;
+
+      let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">`;
+      html += `<head><meta charset="utf-8">`;
+      html += `<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Corte</x:Name>`;
+      html += `<x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->`;
+      html += `<style>`;
+      html += `table { border-collapse: collapse; font-family: Segoe UI, sans-serif; width: 100%; }`;
+      html += `th { background-color: #1e3a8a; color: white; font-weight: bold; border: 1px solid #cbd5e0; padding: 8px 6px; text-align: center; font-size: 11px; }`;
+      html += `td { border: 1px solid #cbd5e0; padding: 6px; text-align: center; font-size: 11px; }`;
+      html += `.header-title { font-size: 14px; font-weight: bold; color: #1e3a8a; text-align: center; padding: 12px; }`;
+      html += `.nombre-col { text-align: left; font-weight: 600; color: #1e293b; min-width: 180px; white-space: nowrap; }`;
+      html += `.presente { background-color: #f0fdf4; color: #166534; font-weight: 600; }`;
+      html += `.ausente { background-color: #fef2f2; color: #991b1b; font-weight: 600; }`;
+      html += `.resumen { background-color: #eff6ff; font-weight: 700; color: #1e40af; }`;
+      html += `</style></head><body>`;
+
+      const totalColumnas = 3 + fechasOrdenadas.length + 2; // Nombre, Cédula, Cargo + Fechas + Asistencias + Inasistencias
+      html += `<table>`;
+      html += `<tr><td colspan="${totalColumnas}" class="header-title">${title}</td></tr>`;
+      html += `<tr><td colspan="${totalColumnas}" style="text-align: center; font-size: 10px; color: #718096;">Generado: ${new Date().toLocaleString('es-VE')}</td></tr>`;
+
+      // Encabezados
+      html += `<tr><th>NOMBRE</th><th>CÉDULA</th><th>CARGO</th>`;
+      fechasOrdenadas.forEach(f => {
+        html += `<th>${f}</th>`;
+      });
+      html += `<th style="background-color:#166534;">ASISTENCIAS</th>`;
+      html += `<th style="background-color:#991b1b;">INASISTENCIAS</th>`;
+      html += `</tr>`;
+
+      // Filas por empleado
+      activos.forEach((emp: any) => {
+        let totalPresente = 0;
+        let totalAusente = 0;
+        html += `<tr>`;
+        html += `<td class="nombre-col">${emp.nombre_p}</td>`;
+        html += `<td>${emp.ci_p}</td>`;
+        html += `<td>${emp.cargo || 'Personal'}</td>`;
+
+        fechasOrdenadas.forEach(fechaStr => {
+          const asisDia = asistenciasFiltradas.find((a: any) => {
+            if (a.ci_p.trim() !== emp.ci_p.trim()) return false;
+            const entStr = a.entrada + (a.entrada.endsWith('Z') ? '' : 'Z');
+            return new Date(entStr).toLocaleDateString('es-VE') === fechaStr;
+          });
+
+          if (asisDia) {
+            totalPresente++;
+            const entStr = asisDia.entrada + (asisDia.entrada.endsWith('Z') ? '' : 'Z');
+            const ent = new Date(entStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            let sal = '--';
+            if (asisDia.salida) {
+              const salStr = asisDia.salida + (asisDia.salida.endsWith('Z') ? '' : 'Z');
+              sal = new Date(salStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+            html += `<td class="presente">${ent} / ${sal}</td>`;
+          } else {
+            totalAusente++;
+            html += `<td class="ausente">—</td>`;
+          }
+        });
+
+        html += `<td class="resumen">${totalPresente}</td>`;
+        html += `<td class="resumen" style="background-color:#fef2f2; color:#991b1b;">${totalAusente}</td>`;
+        html += `</tr>`;
+      });
+
+      html += `</table></body></html>`;
+
+      const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', `Reporte_Asistencia_Corte_${this.fechaCorteDesde}_a_${this.fechaCorteHasta}.xls`);
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      this.cerrarModalExportar();
+      alert('📊 Reporte de corte exportado exitosamente.');
+
+    } catch (error) {
+      console.error("Error al exportar por corte:", error);
+      alert("Error al generar el reporte de corte. Verifique la conexión con el servidor.");
+    }
+  }
+
   imprimirCarnet(persona: PersonalAsistencia) {
     const fecha = new Date().getFullYear();
 
@@ -274,7 +445,7 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
       <html>
       <head>
         <title>Carnet de Identificación - ${persona.nombre}</title>
-        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+        <script src="${window.location.origin}/js/JsBarcode.all.min.js"><\/script>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
           body {
@@ -463,5 +634,29 @@ export class AsistenciaComponent implements OnInit, OnDestroy {
       printWindow.document.write(carnetHtml);
       printWindow.document.close();
     }
+  }
+
+  generarCodigosDeBarraLocal() {
+    setTimeout(() => {
+      const jsbarcode = (window as any).JsBarcode;
+      if (!jsbarcode) {
+        console.error("Librería local JsBarcode no encontrada.");
+        return;
+      }
+      this.personalList.forEach(p => {
+        try {
+          jsbarcode(`#barcode-${p.cedula}`, p.cedula, {
+            format: "CODE128",
+            width: 1.5,
+            height: 50,
+            displayValue: false, // Opcional, ya se muestra la cédula en texto arriba del SVG
+            margin: 0,
+            background: "transparent"
+          });
+        } catch (e) {
+          console.error(`Error generando código de barra local para ${p.cedula}:`, e);
+        }
+      });
+    }, 150);
   }
 }

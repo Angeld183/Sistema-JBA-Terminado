@@ -237,3 +237,64 @@
     from { transform: translateY(-20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
+
+/* Botones de acción en la tarjeta del empleado */
+.acciones-empleado-card {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    width: 100%;
+    border-top: 1px solid #f1f3f5;
+    padding-top: 15px;
+}
+
+.acciones-empleado-card button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    flex: 1 1 calc(50% - 8px);
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+/* El último botón (Desactivar/Activar) toma el 100% del ancho para no desbordar */
+.acciones-empleado-card button:last-child {
+    flex: 1 1 100%;
+}
+
+.btn-editar-verde {
+    color: white !important;
+}
+.btn-editar-verde:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+}
+
+.btn-ver-mas-azul {
+    background: #3b82f6 !important;
+    color: white !important;
+}
+.btn-ver-mas-azul:hover {
+    background: #2563eb !important;
+    transform: translateY(-1px);
+}
+
+.btn-borrar-rojo {
+    background: #ef4444 !important;
+    color: white !important;
+}
+.btn-borrar-rojo:hover {
+    background: #dc2626 !important;
+    transform: translateY(-1px);
+}

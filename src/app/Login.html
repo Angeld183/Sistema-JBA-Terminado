@@ -11,12 +11,12 @@
         </div>
     }
 
-    <div class="input-group">
+    <div class="login-input-group">
         <i class="fa-solid fa-user"></i>
         <input type="text" #cedulaInput placeholder="Cédula de Identidad (Usuario)" (keyup.enter)="ingresar(cedulaInput.value, passwordInput.value)">
     </div>
 
-    <div class="input-group">
+    <div class="login-input-group">
         <i class="fa-solid fa-lock"></i>
         <input type="password" #passwordInput id="password" placeholder="Contraseña" (keyup.enter)="ingresar(cedulaInput.value, passwordInput.value)">
         <i class="fa-solid fa-eye toggle-password" (click)="togglePassword()"></i>

@@ -427,7 +427,7 @@ namespace ApiJBA.Controllers
                 mensaje = "Inicio de sesión exitoso. Bienvenido al sistema.",
                 usuario = dto,
                 token = token,
-                expiracion = DateTime.UtcNow.AddMinutes(5)
+                expiracion = DateTime.UtcNow.AddMinutes(60)
             });
         }
 
@@ -455,9 +455,9 @@ namespace ApiJBA.Controllers
 
             return Ok(new
             {
-                mensaje = "Sesión renovada por 5 minutos más.",
+                mensaje = "Sesión renovada por 60 minutos más.",
                 token = nuevoToken,
-                expiracion = DateTime.UtcNow.AddMinutes(5)
+                expiracion = DateTime.UtcNow.AddMinutes(60)
             });
         }
 
@@ -473,7 +473,7 @@ namespace ApiJBA.Controllers
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? ""));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expiracion = DateTime.UtcNow.AddMinutes(5);
+            var expiracion = DateTime.UtcNow.AddMinutes(60);
 
             var token = new JwtSecurityToken(
                 issuer: configuration["Jwt:Issuer"],

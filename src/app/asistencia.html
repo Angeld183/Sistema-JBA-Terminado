@@ -22,10 +22,13 @@
                 <h2 style="margin: 0; color: #1e293b; font-size: 1.4rem;">Control de Personal Diario</h2>
                 <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.85rem;">Monitoreo de horas de entrada y salida del personal del CEI Juan Bautista Arismendi</p>
             </div>
-            <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                 <div style="font-weight: 700; color: #1e293b; font-size: 1.2rem; background: #f1f5f9; padding: 8px 16px; border-radius: 8px;">⏰ {{ horaActual }}</div>
-                <button type="button" (click)="exportarAsistenciaExcel()" style="background: #16a34a; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
-                    <i class="fas fa-file-excel"></i> Exportar Asistencias 📊
+                <button type="button" (click)="exportarAsistenciaExcel()" style="background: #16a34a; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s; font-size: 0.85rem;">
+                    <i class="fas fa-file-excel"></i> Exportar Hoy
+                </button>
+                <button type="button" (click)="abrirModalExportar()" style="background: #1e3a8a; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s; font-size: 0.85rem;">
+                    <i class="fas fa-calendar-alt"></i> Exportar por Corte 📊
                 </button>
             </div>
         </div>
@@ -78,7 +81,7 @@
                 <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; text-align: center; background: #f8fafc; font-family: inherit;">
                     <strong style="display: block; color: #1e293b; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px;">{{ p.nombre }}</strong>
                     <span style="font-size: 0.75rem; color: #64748b; font-weight: 600; display: block; margin-bottom: 10px;">CI: {{ p.cedula }}</span>
-                    <img [src]="'https://barcodeapi.org/api/128/' + p.cedula" alt="Código de Barras" style="width: 180px; height: 70px; border: 2px solid white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 0 auto 10px auto; display: block; object-fit: contain; background: white; padding: 4px;">
+                    <svg [id]="'barcode-' + p.cedula" style="width: 180px; height: 70px; border: 2px solid white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 0 auto 10px auto; display: block; background: white; padding: 4px;"></svg>
                     <div style="display: flex; gap: 8px; justify-content: center;">
                         <button type="button" (click)="imprimirCarnet(p)" style="background: #10b981; color: white; border: none; font-size: 0.75rem; font-weight: bold; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: background 0.2s;">
                             <i class="fas fa-id-badge"></i> Imprimir Carnet
@@ -89,3 +92,44 @@
         </div>
     </div>
 </div>
+
+<!-- MODAL: Exportar Asistencias por Corte -->
+@if (modalExportarAbierto) {
+<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 500; display: flex; justify-content: center; align-items: center;">
+    <div style="background: white; border-radius: 16px; padding: 30px; width: 420px; max-width: 90vw; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: slideDownComponent 0.3s ease;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #1e293b; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-calendar-alt" style="color: #1e3a8a;"></i> Exportar por Corte
+            </h3>
+            <span (click)="cerrarModalExportar()" style="font-size: 1.8rem; cursor: pointer; color: #94a3b8; line-height: 1;">&times;</span>
+        </div>
+
+        <p style="margin: 0 0 20px 0; color: #64748b; font-size: 0.85rem;">Selecciona el rango de fechas para generar un reporte consolidado de asistencias por empleado.</p>
+
+        <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+            <div style="flex: 1;">
+                <label style="display: block; font-weight: 600; color: #334155; font-size: 0.85rem; margin-bottom: 6px;">📅 Fecha Desde</label>
+                <input type="date" [(ngModel)]="fechaCorteDesde" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; box-sizing: border-box;">
+            </div>
+            <div style="flex: 1;">
+                <label style="display: block; font-weight: 600; color: #334155; font-size: 0.85rem; margin-bottom: 6px;">📅 Fecha Hasta</label>
+                <input type="date" [(ngModel)]="fechaCorteHasta" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; box-sizing: border-box;">
+            </div>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 20px; font-size: 0.8rem; color: #475569;">
+            <i class="fas fa-info-circle" style="color: #3b82f6;"></i>
+            El reporte incluirá: <strong>Nombre</strong>, <strong>Cédula</strong>, <strong>Cargo</strong>, la hora de <strong>Entrada/Salida</strong> por cada día del rango, y un conteo total de <strong>Asistencias</strong> e <strong>Inasistencias</strong>.
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button type="button" (click)="cerrarModalExportar()" style="flex: 1; padding: 12px; border: 1px solid #cbd5e1; background: white; border-radius: 8px; font-weight: 600; cursor: pointer; color: #475569; transition: background 0.2s; font-size: 0.9rem;">
+                Cancelar
+            </button>
+            <button type="button" (click)="exportarPorCorte()" style="flex: 2; padding: 12px; border: none; background: linear-gradient(135deg, #1e3a8a, #3b82f6); color: white; border-radius: 8px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="fas fa-file-excel"></i> Generar y Descargar Reporte
+            </button>
+        </div>
+    </div>
+</div>
+}

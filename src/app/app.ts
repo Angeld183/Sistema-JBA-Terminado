@@ -138,8 +138,8 @@ export class MenuComponent implements OnInit {
         } else if (user.modulos_asignados) {
           this.modulosAsignados = user.modulos_asignados.split(',').map((m: string) => m.trim());
         } else {
-          // Por defecto, si es nulo (usuarios creados anteriormente), tiene acceso total
-          this.modulosAsignados = ['Personal', 'Inscripciones', 'Matriculas', 'Fondos', 'Asistencia', 'Inventario'];
+          // Por defecto, si es nulo no tiene ningún módulo asignado (solo Sistemas los asigna)
+          this.modulosAsignados = [];
         }
       } catch (e) {
         console.error("Error al procesar los datos de usuario:", e);
@@ -206,6 +206,7 @@ interface Empleado {
   nivel: number;
   estado: boolean;
   modulos_asignados?: string;
+  correo_p?: string;
 }
 
 // ==========================================
@@ -361,7 +362,8 @@ export class EmpleadosComponent implements OnInit {
           oculto: true,
           nivel: emp.nivel,
           estado: emp.estado,
-          modulos_asignados: emp.modulos_asignados
+          modulos_asignados: emp.modulos_asignados,
+          correo_p: emp.correo_p
         };
       });
       this.cdr.detectChanges();
@@ -419,6 +421,7 @@ export class EmpleadosComponent implements OnInit {
     const idAulaSelected = formData.get('id_aula') as string;
     const suplenteCi = formData.get('suplente') as string;
     const turnoCi = formData.get('turnoDocente') as string;
+    const correo = formData.get('correo_p') as string;
 
     const esDocente = cargo === 'Docente';
     const id_aula = (esDocente && idAulaSelected) ? parseInt(idAulaSelected, 10) : null;
@@ -452,7 +455,7 @@ export class EmpleadosComponent implements OnInit {
       cargo: cargo,
       fecha_registro: new Date().toISOString(),
       direccion_p: "Por definir", 
-      correo_p: "",
+      correo_p: correo || "",
       foto_p: "",
       fecha_voucher: null,
       tipo_preparacion: JSON.stringify(prepObj)
@@ -545,6 +548,7 @@ export class EmpleadosComponent implements OnInit {
     const idAulaSelected = formData.get('id_aula') as string;
     const suplenteCi = formData.get('suplente') as string;
     const turnoCi = formData.get('turnoDocente') as string;
+    const correo = formData.get('correo_p') as string;
 
     const esDocenteVal = cargo === 'Docente';
     const id_aula = (esDocenteVal && idAulaSelected) ? parseInt(idAulaSelected, 10) : null;
@@ -578,7 +582,7 @@ export class EmpleadosComponent implements OnInit {
       cargo: cargo,
       fecha_registro: new Date().toISOString(),
       direccion_p: "Por definir", 
-      correo_p: "",
+      correo_p: correo || "",
       foto_p: "",
       fecha_voucher: null,
       tipo_preparacion: JSON.stringify(prepObj),
@@ -924,7 +928,7 @@ export class EmpleadosComponent implements OnInit {
       cargo: this.empleadoAEditar.cargo,
       fecha_registro: new Date().toISOString(),
       direccion_p: "Por definir",
-      correo_p: "",
+      correo_p: this.empleadoAEditar.correo_p || "",
       foto_p: "",
       fecha_voucher: null,
       tipo_preparacion: JSON.stringify(prepObj),

@@ -31,11 +31,51 @@ export class SalonesComponent implements OnInit {
   alumnoSeleccionado: any = null;
 
   // Configuración estática inicializada para renderizar las salas
-  salasConfig = [
-    { id: '3', nombre: 'Sala 3', secciones: ['A', 'B', 'C'], seccionesTexto: 'A, B y C' },
-    { id: '4', nombre: 'Sala 4', secciones: ['A', 'B', 'C', 'D'], seccionesTexto: 'A, B, C y D' },
-    { id: '5', nombre: 'Sala 5', secciones: ['A', 'B', 'C', 'D', 'E'], seccionesTexto: 'A, B, C, D y E' }
-  ];
+  get salasConfig() {
+    if (!this.matriculasList || this.matriculasList.length === 0) {
+      return [
+        { id: '3', nombre: 'Sala 3', secciones: ['A', 'B', 'C'], seccionesTexto: 'A, B y C' },
+        { id: '4', nombre: 'Sala 4', secciones: ['A', 'B', 'C', 'D'], seccionesTexto: 'A, B, C y D' },
+        { id: '5', nombre: 'Sala 5', secciones: ['A', 'B', 'C', 'D', 'E'], seccionesTexto: 'A, B, C, D y E' }
+      ];
+    }
+
+    const salasMap = new Map<string, { id: string, nombre: string, secciones: Set<string> }>();
+    
+    this.matriculasList.forEach(m => {
+      if (!m.aula) return;
+      const id = m.aula.replace(/\D/g, "");
+      if (!id) return;
+      
+      if (!salasMap.has(m.aula)) {
+        salasMap.set(m.aula, {
+          id: id,
+          nombre: m.aula,
+          secciones: new Set<string>()
+        });
+      }
+      if (m.seccion) {
+        salasMap.get(m.aula)!.secciones.add(m.seccion);
+      }
+    });
+
+    const result = Array.from(salasMap.values()).map(sala => {
+      const seccionesSorted = Array.from(sala.secciones).sort();
+      let seccionesTexto = seccionesSorted.join(', ');
+      const lastComma = seccionesTexto.lastIndexOf(', ');
+      if (lastComma !== -1) {
+        seccionesTexto = seccionesTexto.substring(0, lastComma) + ' y ' + seccionesTexto.substring(lastComma + 2);
+      }
+      return {
+        id: sala.id,
+        nombre: sala.nombre,
+        secciones: seccionesSorted,
+        seccionesTexto: seccionesTexto
+      };
+    }).sort((a, b) => parseInt(a.id) - parseInt(b.id));
+
+    return result;
+  }
 
   baseDatosAlumnos: any[] = [];
   personalList: any[] = [];
@@ -172,7 +212,7 @@ export class SalonesComponent implements OnInit {
   irAAlumnos(seccion: string) {
     this.seccionSeleccionada = seccion; // 👈 Corregido el typo "section"
     this.nivelActual = 3;
-    const numeroAnio = this.salaSeleccionada.replace("Sala ", ""); // 👈 año cambiado a anio
+    const numeroAnio = this.salaSeleccionada.replace(/\D/g, "");
     
     // Regla de Negocio: Secciones A y B en la Mañana, C en adelante Tarde
     const turno = (seccion === "A" || seccion === "B") ? "Turno Mañana" : "Turno Tarde";
@@ -220,9 +260,9 @@ export class SalonesComponent implements OnInit {
 
   obtenerMatriculaActual(): any {
     if (!this.salaSeleccionada || !this.seccionSeleccionada) return null;
-    const numeroAnio = this.salaSeleccionada.replace("Sala ", "");
+    const numeroAnio = this.salaSeleccionada.replace(/\D/g, "");
     return this.matriculasList.find(m => 
-      m.aula.includes(numeroAnio) && 
+      m.aula.replace(/\D/g, "") === numeroAnio && 
       m.seccion.toLowerCase().trim() === this.seccionSeleccionada.toLowerCase().trim()
     );
   }
@@ -271,12 +311,14 @@ export class SalonesComponent implements OnInit {
   }
 
   contarAlumnosPorSeccion(salaId: string, seccion: string): number {
-    return this.baseDatosAlumnos.filter(a => a.anio === salaId && a.seccion === seccion).length;
+    const cleanId = salaId.replace(/\D/g, "");
+    return this.baseDatosAlumnos.filter(a => a.anio === cleanId && a.seccion === seccion).length;
   }
 
   obtenerCapacidadSeccion(salaId: string, seccion: string): number {
+    const cleanId = salaId.replace(/\D/g, "");
     const mat = this.matriculasList.find(m =>
-      m.aula.includes(salaId) &&
+      m.aula.replace(/\D/g, "") === cleanId &&
       m.seccion.toLowerCase().trim() === seccion.toLowerCase().trim()
     );
     return mat ? mat.capacidad : 0;

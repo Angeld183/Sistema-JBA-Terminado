@@ -72,3 +72,9 @@
 .btn-qr:hover { 
     background-color: #219150; 
 }
+
+/* Animación del modal */
+@keyframes slideDownComponent {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}

@@ -2,7 +2,6 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: Arial, sans-serif;
 }
 
 body, :host {
@@ -14,6 +13,7 @@ body, :host {
     background: #f6f8fc;
     overflow: hidden;
     position: relative;
+    font-family: Arial, sans-serif;
 }
 
 :host::before,
@@ -85,7 +85,7 @@ h1 {
     transform: translateX(-50%);
 }
 
-.input-group {
+.login-input-group {
     display: flex;
     align-items: center;
     margin-bottom: 18px;
@@ -95,7 +95,7 @@ h1 {
     background: #fff;
 }
 
-.input-group i {
+.login-input-group i {
     width: 60px;
     height: 60px;
     background: #eef4ff;
@@ -106,7 +106,7 @@ h1 {
     justify-content: center;
 }
 
-.input-group input {
+.login-input-group input {
     flex: 1;
     border: none;
     outline: none;

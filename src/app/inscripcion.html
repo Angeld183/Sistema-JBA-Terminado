@@ -42,19 +42,33 @@
                     </div>
                 </div>
 
-                <div *ngIf="esRegular === 'si'" style="background: #f4f6f7; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #0d6efd;">
+                <div *ngIf="esRegular === 'si'" style="background: #f4f6f7; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #0d6efd; position: relative;">
                     <label style="font-weight: bold; color: #2c3e50; display: block; margin-bottom: 5px;">Buscar Alumno Registrado Anteriormente:</label>
                     <div style="display: flex; gap: 10px;">
-                        <input type="text" name="txt_busqueda" [(ngModel)]="terminoBusqueda" placeholder="Escribe el nombre o cédula..." style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                        <button type="button" (click)="buscarAlumnoRegular()" style="background: #0d6efd; color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">Buscar 🔍</button>
+                        <input type="text" name="txt_busqueda" [(ngModel)]="terminoBusqueda" (input)="filtrarAlumnosRegulares()" (focus)="mostrarDropdownAlumnos = true" placeholder="Escribe el nombre o cédula..." style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    <!-- Dropdown de búsqueda de alumno regular -->
+                    <div class="autocomplete-dropdown" *ngIf="mostrarDropdownAlumnos && alumnosFiltrados.length > 0" style="position: absolute; top: 100%; left: 0; width: 100%; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-radius: 0 0 6px 6px;">
+                        <div class="dropdown-item" *ngFor="let a of alumnosFiltrados" (click)="seleccionarAlumnoRegular(a)" style="padding: 10px 16px; cursor: pointer; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 2px;">
+                            <strong style="color: #1e293b;">{{ a.nombre_alumno }}</strong>
+                            <span style="font-size: 0.75rem; color: #64748b;">Cédula: {{ a.ci_alumno }} | Representante: {{ a.ci_representante }}</span>
+                        </div>
                     </div>
                 </div>
 
                 <h4 style="color: #0d6efd; border-bottom: 2px solid #dee2e6; padding-bottom: 5px; margin-top: 10px;">👤 Datos del Representante Legal Principal</h4>
                 <div class="rejilla-formulario">
-                    <div class="campo-formulario">
+                    <div class="campo-formulario" style="position: relative;">
                         <label>Cédula del Representante *</label>
-                        <input type="text" name="rep_cedula" [(ngModel)]="alumno.cedula" (input)="calcularCedulaEscolar()" required placeholder="Ej. 15456789">
+                        <input type="text" name="rep_cedula" [(ngModel)]="alumno.cedula" (input)="calcularCedulaEscolar(); filtrarRepresentantes()" (focus)="mostrarDropdownRepresentantes = true" required placeholder="Ej. 15456789">
+                        
+                        <!-- Dropdown de búsqueda de representante -->
+                        <div class="autocomplete-dropdown" *ngIf="mostrarDropdownRepresentantes && representantesFiltrados.length > 0" style="position: absolute; top: 100%; left: 0; width: 100%; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #cbd5e1; z-index: 1000; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); border-radius: 0 0 6px 6px;">
+                            <div class="dropdown-item" *ngFor="let r of representantesFiltrados" (click)="seleccionarRepresentante(r)" style="padding: 10px 16px; cursor: pointer; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 2px;">
+                                <strong style="color: #1e293b;">{{ r.nombre_representante }}</strong>
+                                <span style="font-size: 0.75rem; color: #64748b;">Cédula: {{ r.ci_representante }}</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="campo-formulario">
                         <label>Nombre del Representante *</label>
